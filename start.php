@@ -7,5 +7,5 @@ $server = new \Jtar\Server("tcp://0.0.0.0:9501");
 
 $server->Listen();
 
-$server->Accept();
+$server->eventLoop();
 
