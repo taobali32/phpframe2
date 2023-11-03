@@ -4,12 +4,10 @@ namespace Jtar;
 
 class Server
 {
-
     public $_mainSocket;
     public $_local_socket;
 
-    static public $_connections = [];
-
+    public static $_connections = [];
 
     public $_events = [];
 
@@ -26,7 +24,7 @@ class Server
 
     public function Listen()
     {
-        $flag = STREAM_SERVER_LISTEN | STREAM_SERVER_BIND;
+        $flag = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
 
         $option['socket']['backlog'] = 10;
 
@@ -40,29 +38,37 @@ class Server
             fprintf(STDOUT, "server create fail:%s\n", $errstr);
             exit(0);
         }
+
+        stream_set_blocking($this->_mainSocket, 0);
     }
+
 
     public function eventLoop()
     {
-        // 返回0没有任何事件发生, 返回false就是错误了,
-
         while (1) {
+            // 这里很神奇,注释的用着就报错了.
+            $readFds = [$this->_mainSocket];
+//            $readFds[] = $this->_mainSocket;
 
-            $readFds[] = $this->_mainSocket;
             $writeFds = [];
             $exceptFds = [];
 
-            if (!empty(self::$_connections)) {
-                foreach (self::$_connections as $idx => $connection) {
+            if (!empty(static::$_connections)) {
+                foreach (static::$_connections as $idx => $connection) {
 
                     $sockfd = $connection->sockfd();
-                    $readFds[] = $sockfd;
-                    $writeFds[] = $sockfd;
+
+                    if (is_resource($sockfd)) {
+                        $readFds[] = $sockfd;
+                        $writeFds[] = $sockfd;
+                    }
                 }
             }
+
             // tv_sec设置为0 则很快就返回了, 不需要等待, 导致该函数一直执行占用cpu..
             // 给null的话有客户端连接才执行
-            $ret = stream_select($readFds, $writeFds, $exceptFds, NULL, NULL);
+
+            $ret = stream_select($readFds, $writeFds, $exceptFds, 5, NULL);
 
             if ($ret === FALSE) {
                 break;
@@ -72,23 +78,15 @@ class Server
                 foreach ($readFds as $fd) {
                     if ($fd == $this->_mainSocket) {
                         $this->Accept();
+                    } else {
+
+                        /**
+                         * @var TcpConnection $connection
+                         */
+                        $connection = static::$_connections[(int)$fd];
+
+                        $connection->recv4socket();
                     }
-
-                    /**
-                     * @var TcpConnection $connection
-                     */
-                    $connection = static::$_connections[(int)$fd];
-
-                    $connection->recv4socket();
-
-//                    else {
-//                        $data = fread($fd, 1024);
-//                        if ($data) {
-//                            fprintf(STDOUT, "接收到<%d>客户端的数据:%s\r\n", (int)$fd, $data);
-//
-//                            fwrite($fd, "server");
-//                        }
-//                    }
                 }
             }
         }
@@ -105,7 +103,7 @@ class Server
     {
         $connfd = stream_socket_accept($this->_mainSocket, -1, $peername);
 
-        if (is_resource($this->_mainSocket)) {
+        if (is_resource($connfd)) {
 
             $connection = new TcpConnection($connfd, $peername, $this);
 
@@ -113,5 +111,27 @@ class Server
 
             $this->runEventCallBack('connect', [$connection]);
         }
+    }
+
+    public function onClientLeave($sockfd)
+    {
+        if (isset(static::$_connections[(int)$sockfd])) {
+
+            if (is_resource($sockfd)) {
+                (fclose($sockfd));
+            }
+
+            unset(static::$_connections[(int)$sockfd]);
+        }
+    }
+
+
+    public function Start()
+    {
+        $this->Listen();
+
+        $this->Accept();
+
+        $this->eventLoop();
     }
 }

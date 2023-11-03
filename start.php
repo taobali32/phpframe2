@@ -15,17 +15,15 @@ $server->on("connect", function (\Jtar\Server $server, \Jtar\TcpConnection $conn
     fprintf(STDOUT, "有客户端连接了\n");
 });
 
-//
 $server->on("receive", function (\Jtar\Server $server, $msg, \Jtar\TcpConnection $connection) {
     fprintf(STDOUT, "接收到<%d>客户端的数据:%s\r\n", (int)$connection->_sockfd, $msg);
 
     $connection->write2Socket('i im server');
 });
 
+$server->on("close", function (\Jtar\Server $server, \Jtar\TcpConnection $connection) {
+    fprintf(STDOUT, "客户端<%d>已经关闭\r\n", (int)$connection->_sockfd);
+});
 
-$server->Listen();
-
-$server->Accept();
-
-$server->eventLoop();
+$server->Start();
 

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="5" createEmptyFolders="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="5" createEmptyFolders="true" confirmBeforeDeletion="false">
+    <option name="confirmBeforeDeletion" value="false" />
     <serverData>
       <paths name="5">
         <serverdata>
