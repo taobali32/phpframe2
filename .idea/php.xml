@@ -10,6 +10,12 @@
     <option name="highlightLevel" value="WARNING" />
     <option name="transferred" value="true" />
   </component>
+  <component name="PhpIncludePathManager">
+    <include_path>
+      <path value="$PROJECT_DIR$/vendor/opis/closure" />
+      <path value="$PROJECT_DIR$/vendor/composer" />
+    </include_path>
+  </component>
   <component name="PhpInterpreters">
     <interpreters>
       <interpreter id="07704140-3db6-41ff-9738-179707270714" name="ubuntu@182.43.11.219:8225 password" home="sshConfig://DATA" auto="false" debugger_id="php.debugger.XDebug">
