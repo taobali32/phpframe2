@@ -2,6 +2,8 @@
 
 namespace Jtar;
 
+use Jtar\Protocol\Stream;
+
 class Server
 {
     public $_mainSocket;
@@ -11,9 +13,13 @@ class Server
 
     public $_events = [];
 
+    public $_protocol;
+
     public function __construct($_local_socket)
     {
         $this->_local_socket = $_local_socket;
+
+        $this->_protocol = new Stream();
     }
 
 
@@ -94,6 +100,7 @@ class Server
 
     public function runEventCallBack($eventName, $args = [])
     {
+        var_dump($eventName);
         if (isset($this->_events[$eventName]) && is_callable($this->_events[$eventName])) {
             $this->_events[$eventName]($this, ...$args);
         }

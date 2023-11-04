@@ -1,6 +1,9 @@
 <?php
 
 namespace Jtar;
+
+use Jtar\Protocol\Stream;
+
 class Client
 {
     public $_mainSocket;
@@ -9,19 +12,17 @@ class Client
 
     //  接收缓冲区
     public $_recvBuffer = '';
-    private int $_recvLen;
+    private int $_recvLen = 0;
+
+    public $_protocol;
+
+    public $_local_socket;
 
     public function __construct($local_socket)
     {
-        $this->_mainSocket = stream_socket_client($local_socket, $errno, $errstr);
+        $this->_protocol = new Stream();
 
-        if (is_resource($this->_mainSocket)) {
-            $this->runEventCallBack('connect', [$this]);
-
-        } else {
-            $this->runEventCallBack('error', [$this, $errno, $errstr]);
-            exit(0);
-        }
+        $this->_local_socket = $local_socket;
     }
 
 
@@ -44,6 +45,7 @@ class Client
         $this->runEventCallBack('close', [$this]);
     }
 
+    //
     public function recv4socket()
     {
         $data = fread($this->_mainSocket, $this->_readBufferSize);
@@ -64,8 +66,34 @@ class Client
         }
 
         if ($this->_recvLen > 0) {
-            
+
+            while (1) {
+                $ret = $this->_protocol->Len($this->_recvBuffer);
+
+                if ($ret) {
+                    $msgLen = $this->_protocol->msgLen($data);
+
+                    $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
+
+                    $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
+
+                    $message = $this->_protocol->decode($oneMsg);
+
+                    $this->runEventCallBack('receive', [$message]);
+                } else {
+                    break;
+                }
+            }
+
+
         }
+    }
+
+    public function write2Socket($data)
+    {
+        $bin = $this->_protocol->encode($data);
+
+        fwrite($this->_mainSocket, $bin[1], $bin[0]);
     }
 
     public function eventLoop()
@@ -77,7 +105,6 @@ class Client
 
             $ret = stream_select($readFds, $writeFds, $exceptFds, NULL);
 
-
             if ($ret <= 0 || $ret === FALSE) {
                 break;
             }
@@ -86,11 +113,27 @@ class Client
                 $this->recv4socket();
             }
 
-
             if ($writeFds) {
 
             }
 
+        }
+    }
+
+    public function Start()
+    {
+        $this->_mainSocket = stream_socket_client($this->_local_socket, $errno, $errstr);
+
+
+        if (is_resource($this->_mainSocket)) {
+
+            $this->runEventCallBack('connect', [$this]);
+
+            $this->eventLoop();
+
+        } else {
+            $this->runEventCallBack('error', [$this, $errno, $errstr]);
+            exit(0);
         }
     }
 }

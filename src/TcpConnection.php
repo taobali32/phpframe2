@@ -55,17 +55,33 @@ class TcpConnection
                 $this->_recvLen += strlen($data);
             }
 
+
             if ($this->_recvLen > 0) {
-                // 封包和拆包, 必须要知道这条消息的完整长度.
+
+                /**
+                 * @var Server $server
+                 */
+                $server = $this->_server;
+
+                while (1) {
+
+                    $ret = $server->_protocol->Len($this->_recvBuffer);
+
+                    if ($ret) {
+                        $msgLen = $this->_server->_protocol->msgLen($data);
+
+                        $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
+
+                        $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
+
+                        $message = $this->_server->_protocol->decode($oneMsg);
+
+                        $this->_server->runEventCallBack('receive', [$message, $this]);
+                    } else {
+                        break;
+                    }
+                }
             }
-
-//                /**
-//                 * @var Server $server
-//                 */
-//                $server = $this->_server;
-//                $server->runEventCallBack('receive', [$data, $this]);
-
-
         } else {
             $this->_recvBufferFull++;
         }
@@ -73,7 +89,6 @@ class TcpConnection
 
     public function Close()
     {
-
         /**
          * @var Server $server
          */
@@ -86,10 +101,10 @@ class TcpConnection
 
     public function write2Socket($data)
     {
-        $len = strlen($data);
-        $writeLen = fwrite($this->sockfd(), $data, $len);
+        $bin = $this->_server->_protocol->encode($data);
 
-        fprintf(STDOUT, "我写了<%d>客户端的数据字节:%d\r\n", (int)$this->_sockfd, $len);
+        $writeLen = fwrite($this->_sockfd, $bin[1], $bin[0]);
 
+        var_dump("send data to client...");
     }
 }
