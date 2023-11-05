@@ -59,6 +59,8 @@ class TcpConnection
                 // 接收到的数据放在接收缓冲区
                 $this->_recvBuffer .= $data;
                 $this->_recvLen += strlen($data);
+
+                $this->_server->onRecv();
             }
         } else {
             $this->_recvBufferFull++;
@@ -88,6 +90,7 @@ class TcpConnection
 
                 $this->_recvLen -= $msgLen;
                 $this->_recvBufferFull--;
+                $this->_server->onMsg();
 
                 $message = $this->_server->_protocol->decode($oneMsg);
 
@@ -144,8 +147,6 @@ class TcpConnection
             }
         }
 
-
-        var_dump($this->_sendBuffer);
         $writeLen = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
 
         // 完整发送

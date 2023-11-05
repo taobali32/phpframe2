@@ -9,7 +9,9 @@ require_once "vendor/autoload.php";
 // http request
 // ws open/message/close
 // mqtt connect/subscribe/publish/close/unsubscribe
-$server = new \Jtar\Server("tcp://0.0.0.0:9501");
+//$server = new \Jtar\Server("tcp://0.0.0.0:9501");
+$server = new \Jtar\Server("stream://0.0.0.0:9501");
+
 //$server = new \Jtar\Server("tcp://0.0.0.0:9501");
 
 
@@ -18,7 +20,7 @@ $server->on("connect", function (\Jtar\Server $server, \Jtar\TcpConnection $conn
 });
 
 $server->on("receive", function (\Jtar\Server $server, $msg, \Jtar\TcpConnection $connection) {
-    fprintf(STDOUT, "接收到<%d>客户端的数据:%s\r\n", (int)$connection->_sockfd, $msg);
+//    fprintf(STDOUT, "接收到<%d>客户端的数据:%s\r\n", (int)$connection->_sockfd, $msg);
 
     $connection->send($msg);
 });

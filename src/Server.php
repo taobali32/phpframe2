@@ -20,6 +20,13 @@ class Server
     public $_usingProtocol;
 
 
+    // 客户端连接数量
+    static public $_clientNum = 0;
+    //  执行recv/fread调用次数
+    static public $_recvNum = 0;
+    // 1秒钟接收了多少条消息
+    static public $_msgNum = 0;
+
     public $_protocols = [
         'stream' => Stream::class,
 //        "text"      =>  Text::class,
@@ -29,7 +36,6 @@ class Server
     ];
 
     public int $_startTime = 0;
-
 
     public function __construct($_local_socket)
     {
@@ -49,6 +55,20 @@ class Server
         $this->_local_socket = "tcp:" . $ip . ":" . $port;
     }
 
+    public function statistics()
+    {
+        $nowTime = time();
+
+        $diffTime = $nowTime - $this->_startTime;
+
+        if ($diffTime >= 1) {
+            fprintf(STDOUT, "clientNum:%d, recvNum:%d, msgNum:%d\r\n", static::$_clientNum, static::$_recvNum, static::$_msgNum);
+
+            static::$_recvNum = 0;
+            static::$_msgNum = 0;
+            $this->_startTime = $nowTime;
+        }
+    }
 
     public function on($eventName, $eventCall)
     {
@@ -85,6 +105,8 @@ class Server
 
             $writeFds = [];
             $exceptFds = [];
+
+            $this->statistics();
 
             if (!empty(static::$_connections)) {
                 foreach (static::$_connections as $idx => $connection) {
@@ -140,10 +162,17 @@ class Server
 
             $connection = new TcpConnection($connfd, $peername, $this);
 
+            $this->onClientJoin();
+
             static::$_connections[(int)$connfd] = $connection;
 
             $this->runEventCallBack('connect', [$connection]);
         }
+    }
+
+    public function onClientJoin()
+    {
+        ++static::$_clientNum;
     }
 
     public function onClientLeave($sockfd)
@@ -155,9 +184,21 @@ class Server
             }
 
             unset(static::$_connections[(int)$sockfd]);
+
+            --static::$_clientNum;
         }
     }
 
+
+    public function onRecv()
+    {
+        ++static::$_recvNum;
+    }
+
+    public function onMsg()
+    {
+        ++static::$_msgNum;
+    }
 
     public function Start()
     {

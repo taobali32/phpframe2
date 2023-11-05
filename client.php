@@ -13,7 +13,7 @@ $client->on('connect', function (\Jtar\Client $client) {
 $client->on("receive", function (\Jtar\Client $client, $msg) {
     $client->write2Socket('client');
 
-    fprintf(STDOUT, "接收到<%d>服务端的数据:%s\r\n", (int)$client->_mainSocket, $msg);
+//    fprintf(STDOUT, "接收到<%d>服务端的数据:%s\r\n", (int)$client->_mainSocket, $msg);
 });
 
 
