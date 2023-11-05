@@ -25,6 +25,11 @@ class Client
         $this->_local_socket = $local_socket;
     }
 
+    public function sockfd()
+    {
+        return $this->_mainSocket;
+    }
+
 
     public function runEventCallBack($eventName, $args = [])
     {
@@ -81,7 +86,7 @@ class Client
 
             $this->_recvLen -= $msgLen;
 //            $this->_recvBufferFull--;
-            
+
 
             $message = $this->_protocol->decode($oneMsg);
 
@@ -98,7 +103,7 @@ class Client
 
     public function eventLoop()
     {
-        while (1) {
+        if (is_resource($this->_mainSocket)) {
             $readFds = [$this->_mainSocket];
             $writeFds = [$this->_mainSocket];
             $exceptFds = [$this->_mainSocket];
@@ -106,7 +111,7 @@ class Client
             $ret = stream_select($readFds, $writeFds, $exceptFds, NULL);
 
             if ($ret <= 0 || $ret === FALSE) {
-                break;
+                return false;
             }
 
             if ($readFds) {
@@ -117,13 +122,36 @@ class Client
 
             }
 
+            return true;
+
+        } else {
+            return false;
         }
+//        while (1) {
+//            $readFds = [$this->_mainSocket];
+//            $writeFds = [$this->_mainSocket];
+//            $exceptFds = [$this->_mainSocket];
+//
+//            $ret = stream_select($readFds, $writeFds, $exceptFds, NULL);
+//
+//            if ($ret <= 0 || $ret === FALSE) {
+//                break;
+//            }
+//
+//            if ($readFds) {
+//                $this->recv4socket();
+//            }
+//
+//            if ($writeFds) {
+//
+//            }
+//
+//        }
     }
 
     public function Start()
     {
         $this->_mainSocket = stream_socket_client($this->_local_socket, $errno, $errstr);
-
 
         if (is_resource($this->_mainSocket)) {
 

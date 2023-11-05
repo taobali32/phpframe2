@@ -79,7 +79,7 @@ class Server
     {
         $flag = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
 
-        $option['socket']['backlog'] = 10;
+        $option['socket']['backlog'] = 1024;
 
         $context = stream_context_create($option);
 

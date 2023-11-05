@@ -80,6 +80,7 @@ class TcpConnection
 
         if (is_object($server->_protocol) && $server->_protocol != null) {
 
+
             while ($server->_protocol->Len($this->_recvBuffer)) {
 
                 $msgLen = $this->_server->_protocol->msgLen($this->_recvBuffer);
@@ -144,6 +145,8 @@ class TcpConnection
 
             if ($this->_sendLen >= $this->_sendBufferSize) {
                 $this->_sendBufferFull++;
+
+                $server->runEventCallBack('receiveBufferFull', [$this]);
             }
         }
 
