@@ -133,6 +133,8 @@ class TcpConnection
 
             $this->_sendBuffer = '';
             $this->_sendLen = 0;
+            $this->_recvBufferFull = 0;
+
             return true;
         } elseif ($writeLen < $this->_sendLen) {
             // 只发送一半
