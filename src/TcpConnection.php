@@ -84,6 +84,9 @@ class TcpConnection
 
             $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
 
+            $this->_recvLen -= $msgLen;
+            $this->_recvBufferFull--;
+
             $message = $this->_server->_protocol->decode($oneMsg);
 
             $this->_server->runEventCallBack('receive', [$message, $this]);
@@ -127,6 +130,9 @@ class TcpConnection
 
         // 完整发送
         if ($writeLen == $this->_sendLen) {
+
+            $this->_sendBuffer = '';
+            $this->_sendLen = 0;
             return true;
         } elseif ($writeLen < $this->_sendLen) {
             // 只发送一半

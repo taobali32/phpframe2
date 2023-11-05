@@ -79,6 +79,10 @@ class Client
 
             $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
 
+            $this->_recvLen -= $msgLen;
+//            $this->_recvBufferFull--;
+            
+
             $message = $this->_protocol->decode($oneMsg);
 
             $this->runEventCallBack('receive', [$message]);
