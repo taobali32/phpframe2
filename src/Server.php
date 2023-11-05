@@ -100,7 +100,6 @@ class Server
 
     public function runEventCallBack($eventName, $args = [])
     {
-        var_dump($eventName);
         if (isset($this->_events[$eventName]) && is_callable($this->_events[$eventName])) {
             $this->_events[$eventName]($this, ...$args);
         }

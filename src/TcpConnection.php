@@ -22,6 +22,12 @@ class TcpConnection
     //  接收缓冲区
     public $_recvBuffer = '';
 
+    public $_sendLen = 0;
+    public $_sendBuffer = '';
+    public $_sendBufferSize = 1024 * 1000;
+
+    public $_sendBufferFull = 0;
+
     public function __construct($_sockfd, $_clientIp, $_server)
     {
         $this->_sockfd = $_sockfd;
@@ -54,36 +60,33 @@ class TcpConnection
                 $this->_recvBuffer .= $data;
                 $this->_recvLen += strlen($data);
             }
-
-
-            if ($this->_recvLen > 0) {
-
-                /**
-                 * @var Server $server
-                 */
-                $server = $this->_server;
-
-                while (1) {
-
-                    $ret = $server->_protocol->Len($this->_recvBuffer);
-
-                    if ($ret) {
-                        $msgLen = $this->_server->_protocol->msgLen($data);
-
-                        $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
-
-                        $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
-
-                        $message = $this->_server->_protocol->decode($oneMsg);
-
-                        $this->_server->runEventCallBack('receive', [$message, $this]);
-                    } else {
-                        break;
-                    }
-                }
-            }
         } else {
             $this->_recvBufferFull++;
+        }
+
+        if ($this->_recvLen > 0) {
+            $this->handleMessage();
+        }
+    }
+
+    public function handleMessage()
+    {
+        /**
+         * @var Server $server
+         */
+        $server = $this->_server;
+
+        while ($server->_protocol->Len($this->_recvBuffer)) {
+
+            $msgLen = $this->_server->_protocol->msgLen($this->_recvBuffer);
+
+            $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
+
+            $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
+
+            $message = $this->_server->_protocol->decode($oneMsg);
+
+            $this->_server->runEventCallBack('receive', [$message, $this]);
         }
     }
 
@@ -97,6 +100,42 @@ class TcpConnection
         $server->onClientLeave($this->_sockfd);
 
         $server->runEventCallBack('close', [$this]);
+    }
+
+    public function send($data)
+    {
+        $len = strlen($data);
+
+        /**
+         * @var Server $server
+         */
+        $server = $this->_server;
+
+        if ($this->_sendLen + $len < $this->_sendBufferSize) {
+
+            $bin = $server->_protocol->encode($data);
+            $this->_sendBuffer .= $bin[1];
+            $this->_sendLen += $bin[0];
+
+            if ($this->_sendLen >= $this->_sendBufferSize) {
+                $this->_sendBufferFull++;
+            }
+
+        }
+
+        $writeLen = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
+
+        // 完整发送
+        if ($writeLen == $this->_sendLen) {
+            return true;
+        } elseif ($writeLen < $this->_sendLen) {
+            // 只发送一半
+            $this->_sendBuffer = substr($this->_sendBuffer, $writeLen);
+            $this->_sendLen -= $writeLen;
+        } else {
+            // 对端关了
+            $this->Close();
+        }
     }
 
     public function write2Socket($data)

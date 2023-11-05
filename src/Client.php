@@ -66,26 +66,22 @@ class Client
         }
 
         if ($this->_recvLen > 0) {
+            $this->handleMessage();
+        }
+    }
 
-            while (1) {
-                $ret = $this->_protocol->Len($this->_recvBuffer);
+    public function handleMessage()
+    {
+        while ($this->_protocol->Len($this->_recvBuffer)) {
+            $msgLen = $this->_protocol->msgLen($this->_recvBuffer);
 
-                if ($ret) {
-                    $msgLen = $this->_protocol->msgLen($data);
+            $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
 
-                    $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
+            $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
 
-                    $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
+            $message = $this->_protocol->decode($oneMsg);
 
-                    $message = $this->_protocol->decode($oneMsg);
-
-                    $this->runEventCallBack('receive', [$message]);
-                } else {
-                    break;
-                }
-            }
-
-
+            $this->runEventCallBack('receive', [$message]);
         }
     }
 
