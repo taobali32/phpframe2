@@ -13,13 +13,40 @@ class Server
 
     public $_events = [];
 
-    public $_protocol;
+    public $_protocol = null;
+
+    public $_protocol_layout;
+
+    public $_usingProtocol;
+
+
+    public $_protocols = [
+        'stream' => Stream::class,
+//        "text"      =>  Text::class,
+        "ws" => "",
+        "http" => "",
+        "mqtt" => ""
+    ];
+
+    public int $_startTime = 0;
+
 
     public function __construct($_local_socket)
     {
-        $this->_local_socket = $_local_socket;
+        list($protocol, $ip, $port) = explode(":", $_local_socket);
 
-        $this->_protocol = new Stream();
+        if (isset($this->_protocols[$protocol])) {
+            $this->_usingProtocol = $protocol;
+
+            $this->_protocol = new $this->_protocols[$protocol]();
+
+        } else {
+            $this->_usingProtocol = "tcp";
+        }
+
+        $this->_startTime = time();
+
+        $this->_local_socket = "tcp:" . $ip . ":" . $port;
     }
 
 

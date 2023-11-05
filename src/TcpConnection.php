@@ -76,20 +76,32 @@ class TcpConnection
          */
         $server = $this->_server;
 
-        while ($server->_protocol->Len($this->_recvBuffer)) {
+        if (is_object($server->_protocol) && $server->_protocol != null) {
 
-            $msgLen = $this->_server->_protocol->msgLen($this->_recvBuffer);
+            while ($server->_protocol->Len($this->_recvBuffer)) {
 
-            $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
+                $msgLen = $this->_server->_protocol->msgLen($this->_recvBuffer);
 
-            $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
+                $oneMsg = substr($this->_recvBuffer, 0, $msgLen);
 
-            $this->_recvLen -= $msgLen;
-            $this->_recvBufferFull--;
+                $this->_recvBuffer = substr($this->_recvBuffer, $msgLen);
 
-            $message = $this->_server->_protocol->decode($oneMsg);
+                $this->_recvLen -= $msgLen;
+                $this->_recvBufferFull--;
 
-            $this->_server->runEventCallBack('receive', [$message, $this]);
+                $message = $this->_server->_protocol->decode($oneMsg);
+
+                $this->_server->runEventCallBack('receive', [$message, $this]);
+            }
+
+        } else {
+            $server->runEventCallBack("receive", [$this->_recvBuffer, $this]);
+
+            $this->_recvBuffer = "";
+            $this->_recvLen = 0;
+            $this->_recvBufferFull = 0;
+//            $this->_server->onMsg();
+
         }
     }
 
@@ -116,16 +128,24 @@ class TcpConnection
 
         if ($this->_sendLen + $len < $this->_sendBufferSize) {
 
-            $bin = $server->_protocol->encode($data);
-            $this->_sendBuffer .= $bin[1];
-            $this->_sendLen += $bin[0];
+            if (is_object($server->_protocol) && $server->_protocol != null) {
+                $bin = $this->_server->_protocol->encode($data);
+
+                $this->_sendBuffer .= $bin[1];
+                $this->_sendLen += $bin[0];
+            } else {
+
+                $this->_sendBuffer .= $data;
+                $this->_sendLen += $len;
+            }
 
             if ($this->_sendLen >= $this->_sendBufferSize) {
                 $this->_sendBufferFull++;
             }
-
         }
 
+
+        var_dump($this->_sendBuffer);
         $writeLen = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
 
         // 完整发送
