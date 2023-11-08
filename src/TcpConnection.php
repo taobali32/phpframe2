@@ -118,6 +118,10 @@ class TcpConnection
 
         $server->onClientLeave($this->_sockfd);
 
+        $this->_sendLen = 0;
+        $this->_sendBuffer = '';
+        $this->_sendBufferFull = 0;
+
         $server->runEventCallBack('close', [$this]);
     }
 
@@ -150,32 +154,54 @@ class TcpConnection
             }
         }
 
-        $writeLen = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
-
-        // 完整发送
-        if ($writeLen == $this->_sendLen) {
-
-            $this->_sendBuffer = '';
-            $this->_sendLen = 0;
-            $this->_recvBufferFull = 0;
-
-            return true;
-        } elseif ($writeLen < $this->_sendLen) {
-            // 只发送一半
-            $this->_sendBuffer = substr($this->_sendBuffer, $writeLen);
-            $this->_sendLen -= $writeLen;
-        } else {
-            // 对端关了
-            $this->Close();
-        }
+//        $writeLen = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
+//
+//        // 完整发送
+//        if ($writeLen == $this->_sendLen) {
+//
+//            $this->_sendBuffer = '';
+//            $this->_sendLen = 0;
+//            $this->_recvBufferFull = 0;
+//
+//            return true;
+//        } elseif ($writeLen < $this->_sendLen) {
+//            // 只发送一半
+//            $this->_sendBuffer = substr($this->_sendBuffer, $writeLen);
+//            $this->_sendLen -= $writeLen;
+//
+//            $this->_recvBufferFull--;
+//        } else {
+//            // 对端关了
+//            $this->Close();
+//        }
     }
 
-    public function write2Socket($data)
+
+    public function needWrite()
     {
-        $bin = $this->_server->_protocol->encode($data);
+        return $this->_sendLen > 0;
+    }
 
-        $writeLen = fwrite($this->_sockfd, $bin[1], $bin[0]);
+    public function write2Socket()
+    {
+        if ($this->needWrite()) {
 
-        var_dump("send data to client...");
+            $len = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
+
+            if ($len == $this->_sendLen) {
+
+                $this->_sendBuffer = '';
+                $this->_sendLen = 0;
+                return true;
+            } elseif ($len > 0) {
+                $this->_sendBuffer = substr($this->_sendBuffer, $len);
+                $this->_sendLen -= $len;
+//               return false;
+            } else {
+                if (!is_resource($this->_sockfd) || feof($this->_sockfd)) {
+                    $this->Close();
+                }
+            }
+        }
     }
 }

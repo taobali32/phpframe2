@@ -12,15 +12,15 @@ for ($i = 0; $i < 5; $i++) {
     $client->on('connect', function (Client $client) {
 
         fprintf(STDOUT, "socket<%d> connect success!\r\n", (int)$client->sockfd());
-        $client->write2Socket('hello');
     });
 
     $client->on("receive", function (Client $client, $msg) {
 //        $client->write2Socket('client');
+//        $client->send('11');
 
-//    fprintf(STDOUT, "接收到<%d>服务端的数据:%s\r\n", (int)$client->_mainSocket, $msg);
+        // 我就碰的整理,注释了
+        fprintf(STDOUT, "接收到<%d>服务端的数据:%s\r\n", (int)$client->_mainSocket, $msg);
     });
-
 
     $client->on('close', function (Client $client) {
         fprintf(STDOUT, "服务器断开我的连接了\n");
@@ -36,24 +36,24 @@ for ($i = 0; $i < 5; $i++) {
     $clients[] = $client;
 }
 
-
-$pid = pcntl_fork();
-
-if ($pid == 0) {
-    while (1) {
-        for ($i = 0; $i < 5; $i++) {
-            $client = $clients[$i];
-
-            fprintf(STDOUT, "进程FD:%d,在发送数据\n", (int)$client->sockfd());
-
-            $client->write2Socket('hello_' . (int)$client->sockfd());
-        }
-    }
-
-    exit(0);
-}
-
-
+//
+//$pid = pcntl_fork();
+//
+//if ($pid == 0) {
+//    while (1) {
+//        for ($i = 0; $i < 5; $i++) {
+//            $client = $clients[$i];
+//
+//            fprintf(STDOUT, "FD:%d,在发送数据\n", (int)$client->sockfd());
+//
+//            $client->write2Socket('hello_' . (int)$client->sockfd());
+//        }
+//    }
+//
+//    exit(0);
+//}
+//
+//
 while (1) {
     for ($i = 0; $i < 5; $i++) {
 
@@ -61,6 +61,8 @@ while (1) {
          * @var Client
          */
         $client = $clients[$i];
+
+        $client->send('11');
         if (!$client->eventLoop()) {
             break;
         }

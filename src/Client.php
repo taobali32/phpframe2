@@ -18,6 +18,12 @@ class Client
 
     public $_local_socket;
 
+
+    public $_sendLen = 0;
+    public $_sendBuffer = '';
+    public $_sendBufferSize = 1024 * 1000;
+    public $_sendBufferFull = 0;
+
     public function __construct($local_socket)
     {
         $this->_protocol = new Stream();
@@ -28,6 +34,27 @@ class Client
     public function sockfd()
     {
         return $this->_mainSocket;
+    }
+
+    public function send($data)
+    {
+        $len = strlen($data);
+
+
+        if ($this->_sendLen + $len < $this->_sendBufferSize) {
+
+            $bin = $this->_protocol->encode($data);
+            $this->_sendBuffer .= $bin[1];
+            $this->_sendLen += $bin[0];
+
+            if ($this->_sendLen >= $this->_sendBufferSize) {
+                $this->_sendBufferFull++;
+            }
+        } else {
+
+            var_dump("sendLen:" . $this->_sendLen . "sendBufferFull:" . $this->_sendBufferFull . "Len:" . $len);
+            $this->runEventCallBack("sendBufferFull", [$this]);
+        }
     }
 
 
@@ -75,6 +102,11 @@ class Client
         }
     }
 
+    public function needWrite()
+    {
+        return $this->_sendLen > 0;
+    }
+
     public function handleMessage()
     {
         while ($this->_protocol->Len($this->_recvBuffer)) {
@@ -94,11 +126,28 @@ class Client
         }
     }
 
-    public function write2Socket($data)
+    public function write2Socket()
     {
-        $bin = $this->_protocol->encode($data);
+        if ($this->needWrite() && is_resource($this->_mainSocket)) {
 
-        fwrite($this->_mainSocket, $bin[1], $bin[0]);
+            $len = fwrite($this->_mainSocket, $this->_sendBuffer, $this->_sendLen);
+
+            if ($len == $this->_sendLen) {
+
+                $this->_sendBuffer = '';
+                $this->_sendLen = 0;
+                return true;
+            } elseif ($len > 0) {
+                $this->_sendBuffer = substr($this->_sendBuffer, $len);
+                $this->_sendLen -= $len;
+//               return false;
+            } else {
+                if (!is_resource($this->_mainSocket) || feof($this->_mainSocket)) {
+                    $this->onClose();
+                }
+            }
+        }
+
     }
 
     public function eventLoop()
@@ -108,7 +157,7 @@ class Client
             $writeFds = [$this->_mainSocket];
             $exceptFds = [$this->_mainSocket];
 
-            $ret = stream_select($readFds, $writeFds, $exceptFds, NULL);
+            $ret = stream_select($readFds, $writeFds, $exceptFds, NULL, NULL);
 
             if ($ret <= 0 || $ret === FALSE) {
                 return false;
@@ -119,7 +168,7 @@ class Client
             }
 
             if ($writeFds) {
-
+                $this->write2Socket();
             }
 
             return true;
@@ -127,26 +176,7 @@ class Client
         } else {
             return false;
         }
-//        while (1) {
-//            $readFds = [$this->_mainSocket];
-//            $writeFds = [$this->_mainSocket];
-//            $exceptFds = [$this->_mainSocket];
-//
-//            $ret = stream_select($readFds, $writeFds, $exceptFds, NULL);
-//
-//            if ($ret <= 0 || $ret === FALSE) {
-//                break;
-//            }
-//
-//            if ($readFds) {
-//                $this->recv4socket();
-//            }
-//
-//            if ($writeFds) {
-//
-//            }
-//
-//        }
+
     }
 
     public function Start()
@@ -157,7 +187,7 @@ class Client
 
             $this->runEventCallBack('connect', [$this]);
 
-            $this->eventLoop();
+//            $this->eventLoop();
 
         } else {
             $this->runEventCallBack('error', [$this, $errno, $errstr]);

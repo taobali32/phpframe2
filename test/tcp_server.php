@@ -9,7 +9,7 @@ socket_bind($sockfd, '0.0.0.0', 9501);
 
 socket_listen($sockfd);
 
-// 接收客户端连接
+// 接收客户端连接cl
 
 $connfd = socket_accept($sockfd);
 

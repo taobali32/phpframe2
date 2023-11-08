@@ -99,9 +99,7 @@ class Server
     public function eventLoop()
     {
         while (1) {
-            // 这里很神奇,注释的用着就报错了.
             $readFds = [$this->_mainSocket];
-//            $readFds[] = $this->_mainSocket;
 
             $writeFds = [];
             $exceptFds = [];
@@ -123,7 +121,7 @@ class Server
             // tv_sec设置为0 则很快就返回了, 不需要等待, 导致该函数一直执行占用cpu..
             // 给null的话有客户端连接才执行
 
-            $ret = stream_select($readFds, $writeFds, $exceptFds, 5, NULL);
+            $ret = stream_select($readFds, $writeFds, $exceptFds, 1, 0);
 
             if ($ret === FALSE) {
                 break;
@@ -142,6 +140,17 @@ class Server
 
                         $connection->recv4socket();
                     }
+                }
+            }
+
+            if ($writeFds) {
+                foreach ($writeFds as $fd) {
+                    /**
+                     * @var TcpConnection $connection
+                     */
+                    $connection = static::$_connections[(int)$fd];
+
+                    $connection->write2socket();
                 }
             }
         }
@@ -204,7 +213,7 @@ class Server
     {
         $this->Listen();
 
-        $this->Accept();
+//        $this->Accept();
 
         $this->eventLoop();
     }
