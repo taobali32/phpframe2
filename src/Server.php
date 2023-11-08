@@ -106,6 +106,8 @@ class Server
 
             $this->statistics();
 
+            $this->checkHeartTime();
+
             if (!empty(static::$_connections)) {
                 foreach (static::$_connections as $idx => $connection) {
 
@@ -160,6 +162,18 @@ class Server
         }
     }
 
+
+    public function checkHeartTime()
+    {
+        foreach (static::$_connections as $idx => $connection) {
+
+            if ($connection->checkHeartTime()) {
+                $connection->Close();
+            }
+        }
+    }
+
+
     public function runEventCallBack($eventName, $args = [])
     {
         if (isset($this->_events[$eventName]) && is_callable($this->_events[$eventName])) {
@@ -188,7 +202,7 @@ class Server
         ++static::$_clientNum;
     }
 
-    public function onClientLeave($sockfd)
+    public function removeClient($sockfd)
     {
         if (isset(static::$_connections[(int)$sockfd])) {
 

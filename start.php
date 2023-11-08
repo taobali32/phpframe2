@@ -10,7 +10,7 @@ require_once "vendor/autoload.php";
 // ws open/message/close
 // mqtt connect/subscribe/publish/close/unsubscribe
 //$server = new \Jtar\Server("tcp://0.0.0.0:9501");
-$server = new \Jtar\Server("stream://0.0.0.0:9501");
+$server = new \Jtar\Server("tcp://0.0.0.0:9501");
 
 //$server = new \Jtar\Server("tcp://0.0.0.0:9501");
 

@@ -28,11 +28,36 @@ class TcpConnection
 
     public $_sendBufferFull = 0;
 
+    public $_heartTime = 0;
+
+    const HEART_TIME = 20;
+
+    public function resetHeartTime()
+    {
+        $this->_heartTime = time();
+    }
+
+    public function checkHeartTime()
+    {
+        $now = time();
+
+        if ($now - $this->_heartTime >= self::HEART_TIME) {
+
+            fprintf(STDOUT, "已超过心跳时间:%d\n", $now - $this->_heartTime);
+            return true;
+        }
+
+        return false;
+    }
+
+
     public function __construct($_sockfd, $_clientIp, $_server)
     {
         $this->_sockfd = $_sockfd;
         $this->_clientIp = $_clientIp;
         $this->_server = $_server;
+
+        $this->_heartTime = time();
     }
 
     public function sockfd()
@@ -80,7 +105,6 @@ class TcpConnection
 
         if (is_object($server->_protocol) && $server->_protocol != null) {
 
-
             while ($server->_protocol->Len($this->_recvBuffer)) {
 
                 $msgLen = $this->_server->_protocol->msgLen($this->_recvBuffer);
@@ -93,6 +117,8 @@ class TcpConnection
                 $this->_recvBufferFull--;
                 $this->_server->onMsg();
 
+                $this->resetHeartTime();
+
                 $message = $this->_server->_protocol->decode($oneMsg);
 
                 $this->_server->runEventCallBack('receive', [$message, $this]);
@@ -104,8 +130,9 @@ class TcpConnection
             $this->_recvBuffer = "";
             $this->_recvLen = 0;
             $this->_recvBufferFull = 0;
-//            $this->_server->onMsg();
-
+            $this->_server->onMsg();
+            $this->resetHeartTime();
+            
         }
     }
 
@@ -116,7 +143,7 @@ class TcpConnection
          */
         $server = $this->_server;
 
-        $server->onClientLeave($this->_sockfd);
+        $server->removeClient($this->_sockfd);
 
         $this->_sendLen = 0;
         $this->_sendBuffer = '';
