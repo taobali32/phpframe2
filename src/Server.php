@@ -3,6 +3,7 @@
 namespace Jtar;
 
 use Jtar\Protocol\Stream;
+use Jtar\Protocol\Text;
 
 class Server
 {
@@ -29,7 +30,7 @@ class Server
 
     public $_protocols = [
         'stream' => Stream::class,
-//        "text"      =>  Text::class,
+        "text" => Text::class,
         "ws" => "",
         "http" => "",
         "mqtt" => ""
@@ -45,7 +46,6 @@ class Server
             $this->_usingProtocol = $protocol;
 
             $this->_protocol = new $this->_protocols[$protocol]();
-
         } else {
             $this->_usingProtocol = "tcp";
         }
