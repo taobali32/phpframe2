@@ -92,6 +92,7 @@ class Server
             exit(0);
         }
 
+        // 设置为非阻塞方式
         stream_set_blocking($this->_mainSocket, 0);
     }
 
@@ -123,7 +124,7 @@ class Server
             // tv_sec设置为0 则很快就返回了, 不需要等待, 导致该函数一直执行占用cpu..
             // 给null的话有客户端连接才执行
 
-            $ret = stream_select($readFds, $writeFds, $exceptFds, 1, 0);
+            $ret = stream_select($readFds, $writeFds, $exceptFds, 0, 100);
 
             if ($ret === FALSE) {
                 break;

@@ -64,6 +64,13 @@ class TcpConnection
     public function __construct($_sockfd, $_clientIp, $_server)
     {
         $this->_sockfd = $_sockfd;
+
+        stream_set_blocking($this->_sockfd, 0);
+
+        // 设置为0快速返回 读写的时候
+        stream_set_write_buffer($this->_sockfd, 0);
+        stream_set_read_buffer($this->_sockfd, 0);
+
         $this->_clientIp = $_clientIp;
         $this->_server = $_server;
 
