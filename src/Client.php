@@ -24,6 +24,10 @@ class Client
     public $_sendBufferSize = 1024 * 1000;
     public $_sendBufferFull = 0;
 
+    public $_sendNum = 0;
+    public $_sendMsgNum = 0;
+
+
     public function __construct($local_socket)
     {
         $this->_protocol = new Stream();
@@ -36,10 +40,20 @@ class Client
         return $this->_mainSocket;
     }
 
+    public function onSendMsg()
+    {
+        ++$this->_sendNum;
+    }
+
+
+    public function onSendWrite()
+    {
+        ++$this->_sendMsgNum;
+    }
+
     public function send($data)
     {
         $len = strlen($data);
-
 
         if ($this->_sendLen + $len < $this->_sendBufferSize) {
 
@@ -50,11 +64,13 @@ class Client
             if ($this->_sendLen >= $this->_sendBufferSize) {
                 $this->_sendBufferFull++;
             }
-        } else {
 
-            var_dump("sendLen:" . $this->_sendLen . "sendBufferFull:" . $this->_sendBufferFull . "Len:" . $len);
+            $this->onSendMsg();
+            
+        } else {
             $this->runEventCallBack("sendBufferFull", [$this]);
         }
+
     }
 
 
@@ -131,6 +147,8 @@ class Client
         if ($this->needWrite() && is_resource($this->_mainSocket)) {
 
             $len = fwrite($this->_mainSocket, $this->_sendBuffer, $this->_sendLen);
+
+            $this->onSendWrite();
 
             if ($len == $this->_sendLen) {
 

@@ -5,6 +5,7 @@ use Jtar\Client;
 require_once 'vendor/autoload.php';
 
 $clients = [];
+$startTime = time();
 
 for ($i = 0; $i < 5; $i++) {
     $client = new Client("tcp://0.0.0.0:9501");
@@ -36,25 +37,31 @@ for ($i = 0; $i < 5; $i++) {
     $clients[] = $client;
 }
 
-//
-//$pid = pcntl_fork();
-//
-//if ($pid == 0) {
-//    while (1) {
-//        for ($i = 0; $i < 5; $i++) {
-//            $client = $clients[$i];
-//
-//            fprintf(STDOUT, "FD:%d,在发送数据\n", (int)$client->sockfd());
-//
-//            $client->write2Socket('hello_' . (int)$client->sockfd());
-//        }
-//    }
-//
-//    exit(0);
-//}
-//
-//
 while (1) {
+
+    $now = time();
+    $diff = $now - $startTime;
+
+    $startTime = $now;
+
+    if ($diff >= 1) {
+        $sendNum = 0;
+        $sendMsgNum = 0;
+
+        foreach ($clients as $client) {
+            $sendNum += $client->_sendNum;
+            $sendMsgNum += $client->_sendMsgNum;
+        }
+        fprintf(STDOUT, " sendNum:%d, _sendMsgNum:%d\r\n", $sendNum, $sendMsgNum);
+
+
+        foreach ($clients as $client) {
+            $client->_sendNum = 0;
+            $client->_sendMsgNum = 0;
+        }
+    }
+
+
     for ($i = 0; $i < 5; $i++) {
 
         /**

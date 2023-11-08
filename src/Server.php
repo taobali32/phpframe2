@@ -133,24 +133,28 @@ class Server
                         $this->Accept();
                     } else {
 
-                        /**
-                         * @var TcpConnection $connection
-                         */
-                        $connection = static::$_connections[(int)$fd];
 
-                        $connection->recv4socket();
+                        if (isset(static::$_connections[(int)$fd])) {
+                            /**
+                             * @var TcpConnection $connection
+                             */
+                            $connection = static::$_connections[(int)$fd];
+                            $connection->recv4socket();
+                        }
                     }
                 }
             }
 
             if ($writeFds) {
                 foreach ($writeFds as $fd) {
-                    /**
-                     * @var TcpConnection $connection
-                     */
-                    $connection = static::$_connections[(int)$fd];
 
-                    $connection->write2socket();
+                    if (isset(static::$_connections[(int)$fd])) {
+                        /**
+                         * @var TcpConnection $connection
+                         */
+                        $connection = static::$_connections[(int)$fd];
+                        $connection->write2socket();
+                    }
                 }
             }
         }
