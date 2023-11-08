@@ -141,7 +141,9 @@ class Server
                              * @var TcpConnection $connection
                              */
                             $connection = static::$_connections[(int)$fd];
-                            $connection->recv4socket();
+                            if ($connection->isConnected()) {
+                                $connection->recv4socket();
+                            }
                         }
                     }
                 }
@@ -155,7 +157,10 @@ class Server
                          * @var TcpConnection $connection
                          */
                         $connection = static::$_connections[(int)$fd];
-                        $connection->write2socket();
+
+                        if ($connection->isConnected()) {
+                            $connection->write2socket();
+                        }
                     }
                 }
             }

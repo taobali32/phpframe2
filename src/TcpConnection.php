@@ -32,6 +32,12 @@ class TcpConnection
 
     const HEART_TIME = 20;
 
+
+    const STATUS_CLOSED = 10;
+    const STATUS_CONNECTION = 11;
+    public int $_status = 0;
+
+
     public function resetHeartTime()
     {
         $this->_heartTime = time();
@@ -50,6 +56,10 @@ class TcpConnection
         return false;
     }
 
+    public function isConnected()
+    {
+        return $this->_status == static::STATUS_CONNECTION && is_resource($this->_sockfd);
+    }
 
     public function __construct($_sockfd, $_clientIp, $_server)
     {
@@ -58,6 +68,8 @@ class TcpConnection
         $this->_server = $_server;
 
         $this->_heartTime = time();
+
+        $this->_status = self::STATUS_CONNECTION;
     }
 
     public function sockfd()
@@ -132,7 +144,7 @@ class TcpConnection
             $this->_recvBufferFull = 0;
             $this->_server->onMsg();
             $this->resetHeartTime();
-            
+
         }
     }
 
@@ -150,6 +162,9 @@ class TcpConnection
         $this->_sendBufferFull = 0;
 
         $server->runEventCallBack('close', [$this]);
+
+        $this->_status = self::STATUS_CLOSED;
+        $this->_sockfd = null;
     }
 
     public function send($data)
@@ -211,7 +226,7 @@ class TcpConnection
 
     public function write2Socket()
     {
-        if ($this->needWrite()) {
+        if ($this->needWrite() && $this->isConnected()) {
 
             $len = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
 

@@ -27,6 +27,10 @@ class Client
     public $_sendNum = 0;
     public $_sendMsgNum = 0;
 
+    const STATUS_CLOSED = 10;
+    const STATUS_CONNECTION = 11;
+    public int $_status = 0;
+
 
     public function __construct($local_socket)
     {
@@ -66,7 +70,7 @@ class Client
             }
 
             $this->onSendMsg();
-            
+
         } else {
             $this->runEventCallBack("sendBufferFull", [$this]);
         }
@@ -91,30 +95,36 @@ class Client
     {
         fclose($this->_mainSocket);
         $this->runEventCallBack('close', [$this]);
+
+        $this->_status = self::STATUS_CLOSED;
+
+        $this->_mainSocket = null;
     }
 
     //
     public function recv4socket()
     {
-        $data = fread($this->_mainSocket, $this->_readBufferSize);
+        if ($this->isConnected()) {
+            $data = fread($this->_mainSocket, $this->_readBufferSize);
 
-        // 1正常接收, 接收到的数据>0
-        // 2对端关闭了, 接收到的字节数为0
-        // 3 错误,
-        if ($data === '' || $data === false) {
+            // 1正常接收, 接收到的数据>0
+            // 2对端关闭了, 接收到的字节数为0
+            // 3 错误,
+            if ($data === '' || $data === false) {
 
-            if (feof($this->_mainSocket) || !is_resource($this->_mainSocket)) {
-                $this->onClose();
-                return;
+                if (feof($this->_mainSocket) || !is_resource($this->_mainSocket)) {
+                    $this->onClose();
+                    return;
+                }
+            } else {
+                // 接收到的数据放在接收缓冲区
+                $this->_recvBuffer .= $data;
+                $this->_recvLen += strlen($data);
             }
-        } else {
-            // 接收到的数据放在接收缓冲区
-            $this->_recvBuffer .= $data;
-            $this->_recvLen += strlen($data);
-        }
 
-        if ($this->_recvLen > 0) {
-            $this->handleMessage();
+            if ($this->_recvLen > 0) {
+                $this->handleMessage();
+            }
         }
     }
 
@@ -142,9 +152,15 @@ class Client
         }
     }
 
+
+    public function isConnected()
+    {
+        return $this->_status == static::STATUS_CONNECTION && is_resource($this->_mainSocket);
+    }
+
     public function write2Socket()
     {
-        if ($this->needWrite() && is_resource($this->_mainSocket)) {
+        if ($this->needWrite() && $this->isConnected()) {
 
             $len = fwrite($this->_mainSocket, $this->_sendBuffer, $this->_sendLen);
 
@@ -205,6 +221,7 @@ class Client
 
             $this->runEventCallBack('connect', [$this]);
 
+            $this->_status = static::STATUS_CONNECTION;
 //            $this->eventLoop();
 
         } else {
