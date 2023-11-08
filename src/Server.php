@@ -2,6 +2,8 @@
 
 namespace Jtar;
 
+use Jtar\Event\Epoll;
+use Jtar\Event\Event;
 use Jtar\Protocol\Stream;
 use Jtar\Protocol\Text;
 
@@ -20,13 +22,14 @@ class Server
 
     public $_usingProtocol;
 
-
     // 客户端连接数量
     static public $_clientNum = 0;
     //  执行recv/fread调用次数
     static public $_recvNum = 0;
     // 1秒钟接收了多少条消息
     static public $_msgNum = 0;
+
+    static public $_eventLoop;
 
     public $_protocols = [
         'stream' => Stream::class,
@@ -53,6 +56,8 @@ class Server
         $this->_startTime = time();
 
         $this->_local_socket = "tcp:" . $ip . ":" . $port;
+
+        static::$_eventLoop = new Epoll();
     }
 
     public function statistics()
@@ -96,8 +101,12 @@ class Server
         stream_set_blocking($this->_mainSocket, 0);
     }
 
-
     public function eventLoop()
+    {
+        static::$_eventLoop->loop();
+    }
+
+    public function loop()
     {
         while (1) {
             $readFds = [$this->_mainSocket];
@@ -200,6 +209,8 @@ class Server
             static::$_connections[(int)$connfd] = $connection;
 
             $this->runEventCallBack('connect', [$connection]);
+
+//            print_r("接受到客户端连接了");
         }
     }
 
@@ -213,7 +224,7 @@ class Server
         if (isset(static::$_connections[(int)$sockfd])) {
 
             if (is_resource($sockfd)) {
-                (fclose($sockfd));
+                fclose($sockfd);
             }
 
             unset(static::$_connections[(int)$sockfd]);
@@ -236,6 +247,8 @@ class Server
     public function Start()
     {
         $this->Listen();
+
+        static::$_eventLoop->add($this->_mainSocket, Event::EV_READ, [$this, 'Accept']);
 
 //        $this->Accept();
 

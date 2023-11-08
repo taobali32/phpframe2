@@ -2,12 +2,17 @@
 
 namespace Jtar;
 
+use Jtar\Event\Event;
+
 class TcpConnection
 {
     public $_sockfd;
 
     public $_clientIp;
 
+    /**
+     * @var Server $_server
+     */
     public $_server;
 
     public $_readBufferSize = 1024;
@@ -77,6 +82,9 @@ class TcpConnection
         $this->_heartTime = time();
 
         $this->_status = self::STATUS_CONNECTION;
+
+//        Server::$_eventLoop
+        $this->_server::$_eventLoop->add($_sockfd, Event::EV_READ, [$this, 'recv4socket']);
     }
 
     public function sockfd()
@@ -157,18 +165,24 @@ class TcpConnection
 
     public function Close()
     {
+        $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_READ);
+        $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_WRITE);
+
+        if (is_resource($this->_sockfd)) {
+            fclose($this->_sockfd);
+        }
+
         /**
          * @var Server $server
          */
         $server = $this->_server;
+        $server->runEventCallBack('close', [$this]);
 
         $server->removeClient($this->_sockfd);
 
         $this->_sendLen = 0;
         $this->_sendBuffer = '';
         $this->_sendBufferFull = 0;
-
-        $server->runEventCallBack('close', [$this]);
 
         $this->_status = self::STATUS_CLOSED;
         $this->_sockfd = null;
@@ -203,26 +217,34 @@ class TcpConnection
             }
         }
 
-//        $writeLen = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
-//
-//        // 完整发送
-//        if ($writeLen == $this->_sendLen) {
-//
-//            $this->_sendBuffer = '';
-//            $this->_sendLen = 0;
-//            $this->_recvBufferFull = 0;
-//
-//            return true;
-//        } elseif ($writeLen < $this->_sendLen) {
-//            // 只发送一半
-//            $this->_sendBuffer = substr($this->_sendBuffer, $writeLen);
-//            $this->_sendLen -= $writeLen;
-//
-//            $this->_recvBufferFull--;
-//        } else {
-//            // 对端关了
-//            $this->Close();
-//        }
+        $writeLen = fwrite($this->_sockfd, $this->_sendBuffer, $this->_sendLen);
+
+        // 完整发送
+        if ($writeLen == $this->_sendLen) {
+
+            $this->_sendBuffer = '';
+            $this->_sendLen = 0;
+            $this->_recvBufferFull = 0;
+//            $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_WRITE);
+
+            return true;
+        } elseif ($writeLen < $this->_sendLen) {
+            // 只发送一半
+            $this->_sendBuffer = substr($this->_sendBuffer, $writeLen);
+            $this->_sendLen -= $writeLen;
+
+            $this->_recvBufferFull--;
+
+            // 必须是可写事件在监听,不要没事乱监听或者上来就开始监听!,  比如上面 fwrite 就触发可写事件了,.
+            $this->_server::$_eventLoop->add($this->_sockfd, Event::EV_WRITE, [$this, 'write2Socket']);
+
+        } else {
+//            $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_READ);
+//            $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_WRITE);
+
+            // 对端关了
+            $this->Close();
+        }
     }
 
 
@@ -241,10 +263,16 @@ class TcpConnection
 
                 $this->_sendBuffer = '';
                 $this->_sendLen = 0;
+
+                $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_WRITE);
+
                 return true;
             } elseif ($len > 0) {
                 $this->_sendBuffer = substr($this->_sendBuffer, $len);
                 $this->_sendLen -= $len;
+
+//                $this->_server::$_eventLoop->add($this->_sockfd, Event::EV_WRITE, [$this, 'write2Socket']);
+
 //               return false;
             } else {
                 if (!is_resource($this->_sockfd) || feof($this->_sockfd)) {
