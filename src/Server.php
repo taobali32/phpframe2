@@ -4,6 +4,7 @@ namespace Jtar;
 
 use Jtar\Event\Epoll;
 use Jtar\Event\Event;
+use Jtar\Event\Select;
 use Jtar\Protocol\Stream;
 use Jtar\Protocol\Text;
 
@@ -57,7 +58,13 @@ class Server
 
         $this->_local_socket = "tcp:" . $ip . ":" . $port;
 
-        static::$_eventLoop = new Epoll();
+
+        if (DIRECTORY_SEPARATOR == "/") {
+            static::$_eventLoop = new Epoll();
+        } else {
+            static::$_eventLoop = new Select();
+        }
+
     }
 
     public function statistics()
@@ -104,77 +111,6 @@ class Server
     public function eventLoop()
     {
         static::$_eventLoop->loop();
-    }
-
-    public function loop()
-    {
-        while (1) {
-            $readFds = [$this->_mainSocket];
-
-            $writeFds = [];
-            $exceptFds = [];
-
-            $this->statistics();
-
-            $this->checkHeartTime();
-
-            if (!empty(static::$_connections)) {
-                foreach (static::$_connections as $idx => $connection) {
-
-                    $sockfd = $connection->sockfd();
-
-                    if (is_resource($sockfd)) {
-                        $readFds[] = $sockfd;
-                        $writeFds[] = $sockfd;
-                    }
-                }
-            }
-
-            // tv_sec设置为0 则很快就返回了, 不需要等待, 导致该函数一直执行占用cpu..
-            // 给null的话有客户端连接才执行
-
-            $ret = stream_select($readFds, $writeFds, $exceptFds, 0, 100);
-
-            if ($ret === FALSE) {
-                break;
-            }
-
-            if ($readFds) {
-                foreach ($readFds as $fd) {
-                    if ($fd == $this->_mainSocket) {
-                        $this->Accept();
-                    } else {
-
-
-                        if (isset(static::$_connections[(int)$fd])) {
-                            /**
-                             * @var TcpConnection $connection
-                             */
-                            $connection = static::$_connections[(int)$fd];
-                            if ($connection->isConnected()) {
-                                $connection->recv4socket();
-                            }
-                        }
-                    }
-                }
-            }
-
-            if ($writeFds) {
-                foreach ($writeFds as $fd) {
-
-                    if (isset(static::$_connections[(int)$fd])) {
-                        /**
-                         * @var TcpConnection $connection
-                         */
-                        $connection = static::$_connections[(int)$fd];
-
-                        if ($connection->isConnected()) {
-                            $connection->write2socket();
-                        }
-                    }
-                }
-            }
-        }
     }
 
 

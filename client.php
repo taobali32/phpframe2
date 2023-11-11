@@ -20,7 +20,7 @@ for ($i = 0; $i < 5; $i++) {
 //        $client->send('11');
 
         // 我就碰的整理,注释了
-        fprintf(STDOUT, "接收到<%d>服务端的数据:%s\r\n", (int)$client->_mainSocket, $msg);
+//        fprintf(STDOUT, "接收到<%d>服务端的数据:%s\r\n", (int)$client->_mainSocket, $msg);
     });
 
     $client->on('close', function (Client $client) {
@@ -50,7 +50,7 @@ while (1) {
 
         foreach ($clients as $client) {
             $sendNum += $client->_sendNum;
-            $sendMsgNum += $client->_sendMsgNum;
+            $sendMsgNum += $client->_sendMsgNum * 5;
         }
         fprintf(STDOUT, " sendNum:%d, _sendMsgNum:%d\r\n", $sendNum, $sendMsgNum);
 
@@ -61,7 +61,6 @@ while (1) {
         }
     }
 
-
     for ($i = 0; $i < 5; $i++) {
 
         /**
@@ -70,7 +69,7 @@ while (1) {
         $client = $clients[$i];
 
         $client->send('11');
-        if (!$client->eventLoop()) {
+        if (!$client->loop()) {
             break;
         }
     }

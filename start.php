@@ -20,7 +20,7 @@ $server->on("connect", function (\Jtar\Server $server, \Jtar\TcpConnection $conn
 });
 
 $server->on("receive", function (\Jtar\Server $server, $msg, \Jtar\TcpConnection $connection) {
-    fprintf(STDOUT, "接收到<%d>客户端的数据:%s\r\n", (int)$connection->_sockfd, $msg);
+//    fprintf(STDOUT, "接收到<%d>客户端的数据:%s\r\n", (int)$connection->_sockfd, $msg);
 
 //    var_dump($msg);
     $connection->send($msg);

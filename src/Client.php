@@ -2,10 +2,14 @@
 
 namespace Jtar;
 
+use Jtar\Event\Epoll;
+use Jtar\Event\Event;
+use Jtar\Event\Select;
 use Jtar\Protocol\Stream;
 
 class Client
 {
+    public static $_eventLoop;
     public $_mainSocket;
     public $_events = [];
     public $_readBufferSize = 102400;
@@ -37,6 +41,13 @@ class Client
         $this->_protocol = new Stream();
 
         $this->_local_socket = $local_socket;
+
+
+        if (DIRECTORY_SEPARATOR == "/") {
+            static::$_eventLoop = new Epoll();
+        } else {
+            static::$_eventLoop = new Select();
+        }
     }
 
     public function sockfd()
@@ -54,6 +65,7 @@ class Client
     {
         ++$this->_sendMsgNum;
     }
+
 
     public function send($data)
     {
@@ -73,6 +85,34 @@ class Client
 
         } else {
             $this->runEventCallBack("sendBufferFull", [$this]);
+        }
+
+        $writeLen = fwrite($this->_mainSocket, $this->_sendBuffer, $this->_sendLen);
+
+        // 完整发送
+        if ($writeLen == $this->_sendLen) {
+
+            $this->_sendBuffer = '';
+            $this->_sendLen = 0;
+            $this->_recvBufferFull = 0;
+            static::$_eventLoop->del($this->_mainSocket, Event::EV_WRITE);
+
+            $this->onSendWrite();
+
+            return true;
+        } elseif ($writeLen < $this->_sendLen) {
+            // 只发送一半
+            $this->_sendBuffer = substr($this->_sendBuffer, $writeLen);
+            $this->_sendLen -= $writeLen;
+
+            $this->_recvBufferFull--;
+
+            // 必须是可写事件在监听,不要没事乱监听或者上来就开始监听!,  比如上面 fwrite 就触发可写事件了,.
+            static::$_eventLoop->add($this->_mainSocket, Event::EV_WRITE, [$this, 'write2Socket']);
+
+        } else {
+            // 对端关了
+            $this->onClose();
         }
 
     }
@@ -144,8 +184,6 @@ class Client
 
             $this->_recvLen -= $msgLen;
 //            $this->_recvBufferFull--;
-
-
             $message = $this->_protocol->decode($oneMsg);
 
             $this->runEventCallBack('receive', [$message]);
@@ -184,6 +222,11 @@ class Client
 
     }
 
+    public function loop()
+    {
+        return static::$_eventLoop->loop1();
+    }
+
     public function eventLoop()
     {
         if (is_resource($this->_mainSocket)) {
@@ -219,10 +262,17 @@ class Client
 
         if (is_resource($this->_mainSocket)) {
 
+            stream_set_blocking($this->_mainSocket, 0);
+
+            // 设置为0快速返回 读写的时候
+            stream_set_write_buffer($this->_mainSocket, 0);
+            stream_set_read_buffer($this->_mainSocket, 0);
+
             $this->runEventCallBack('connect', [$this]);
 
             $this->_status = static::STATUS_CONNECTION;
-//            $this->eventLoop();
+
+            static::$_eventLoop->add($this->_mainSocket, Event::EV_READ, [$this, 'recv4socket']);
 
         } else {
             $this->runEventCallBack('error', [$this, $errno, $errstr]);

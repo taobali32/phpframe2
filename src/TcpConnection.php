@@ -190,6 +190,11 @@ class TcpConnection
 
     public function send($data)
     {
+        if ($this->isConnected() == false) {
+            $this->Close();
+            return false;
+        }
+
         $len = strlen($data);
 
         /**
@@ -225,7 +230,6 @@ class TcpConnection
             $this->_sendBuffer = '';
             $this->_sendLen = 0;
             $this->_recvBufferFull = 0;
-//            $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_WRITE);
 
             return true;
         } elseif ($writeLen < $this->_sendLen) {
@@ -239,9 +243,6 @@ class TcpConnection
             $this->_server::$_eventLoop->add($this->_sockfd, Event::EV_WRITE, [$this, 'write2Socket']);
 
         } else {
-//            $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_READ);
-//            $this->_server::$_eventLoop->del($this->_sockfd, Event::EV_WRITE);
-
             // 对端关了
             $this->Close();
         }
@@ -271,9 +272,6 @@ class TcpConnection
                 $this->_sendBuffer = substr($this->_sendBuffer, $len);
                 $this->_sendLen -= $len;
 
-//                $this->_server::$_eventLoop->add($this->_sockfd, Event::EV_WRITE, [$this, 'write2Socket']);
-
-//               return false;
             } else {
                 if (!is_resource($this->_sockfd) || feof($this->_sockfd)) {
                     $this->Close();
