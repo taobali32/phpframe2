@@ -186,6 +186,15 @@ class Server
 
         static::$_eventLoop->add($this->_mainSocket, Event::EV_READ, [$this, 'Accept']);
 
+//        static::$_eventLoop->add(2, Event::EV_TIMER, [$this, 'checkHeartTime']);
+        $timerId = static::$_eventLoop->add(1, Event::EV_TIMER, function ($timerId, $arg) {
+//            var_dump($arg);
+
+            var_dump($timerId);
+
+            static::$_eventLoop->del($timerId, Event::EV_TIMER);
+        }, ['name' => 'xxx']);
+
 //        $this->Accept();
 
         $this->eventLoop();

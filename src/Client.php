@@ -42,12 +42,13 @@ class Client
 
         $this->_local_socket = $local_socket;
 
-
-        if (DIRECTORY_SEPARATOR == "/") {
-            static::$_eventLoop = new Epoll();
-        } else {
-            static::$_eventLoop = new Select();
-        }
+        static::$_eventLoop = new Select();
+//
+//        if (DIRECTORY_SEPARATOR == "/") {
+//            static::$_eventLoop = new Epoll();
+//        } else {
+//            static::$_eventLoop = new Select();
+//        }
     }
 
     public function sockfd()
