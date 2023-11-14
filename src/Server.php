@@ -592,12 +592,9 @@ class Server
         pcntl_signal(SIGPIPE, SIG_IGN, false);
     }
 
-
     // 主进程和子进程收到中断信号执行
     public function sigHandler($sigNum)
     {
-//        var_dump("主收到sigHandler:" . $sigNum);
-
         $masterPid = file_get_contents(static::$_pidFile);
         switch ($sigNum) {
 

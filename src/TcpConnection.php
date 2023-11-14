@@ -180,12 +180,19 @@ class TcpConnection
 
         $server->removeClient($this->_sockfd);
 
+        $this->_status = self::STATUS_CLOSED;
+        $this->_sockfd = null;
+
+        $this->_connfd = null;
         $this->_sendLen = 0;
         $this->_sendBuffer = '';
         $this->_sendBufferFull = 0;
+        $this->_sendBufferSize = 0;
 
-        $this->_status = self::STATUS_CLOSED;
-        $this->_sockfd = null;
+        $this->_recvLen = 0;
+        $this->_recvBuffer = '';
+        $this->_recvBufferFull = 0;
+        $this->_recvBufferSize = 0;
     }
 
     public function send($data)
