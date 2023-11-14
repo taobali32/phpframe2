@@ -7,7 +7,9 @@ require_once 'vendor/autoload.php';
 $clients = [];
 $startTime = time();
 
-for ($i = 0; $i < 5; $i++) {
+$n = 1000;
+
+for ($i = 0; $i < $n; $i++) {
     $client = new Client("tcp://0.0.0.0:9501");
 
     $client->on('connect', function (Client $client) {
@@ -61,7 +63,7 @@ while (1) {
         }
     }
 
-    for ($i = 0; $i < 5; $i++) {
+    for ($i = 0; $i < $n; $i++) {
 
         /**
          * @var Client

@@ -55,7 +55,6 @@ class Epoll implements Event
                 }
 
                 $this->_signalEvents[(int)$fd] = $event;
-
                 return true;
 
             case self::EV_TIMER:
@@ -135,6 +134,12 @@ class Epoll implements Event
 
             case self::EV_SIGNAL:
 
+                if (isset($this->_signalEvents[(int)$fd])) {
+                    $event = $this->_signalEvents[(int)$fd];
+                    $event->del();
+                    unset($this->_signalEvents[(int)$fd]);
+                }
+
                 return true;
 
             case self::EV_TIMER:
@@ -151,6 +156,12 @@ class Epoll implements Event
         }
     }
 
+    public function exitLoop()
+    {
+        // TODO: Implement exitLoop() method.
+        return $this->_eventBase->stop();
+    }
+
     public function loop()
     {
         // 内部实现是while
@@ -159,9 +170,23 @@ class Epoll implements Event
 
     public function clearTimer()
     {
+        foreach ($this->_timers as $timerId => $event) {
+
+            if (current($event)->del()) {
+            }
+        }
+
+        $this->_timers = [];
     }
 
     public function clearSignalEvents()
     {
+        foreach ($this->_signalEvents as $fd => $event) {
+
+            if ($event->del()) {
+            }
+        }
+
+        $this->_signalEvents = [];
     }
 }

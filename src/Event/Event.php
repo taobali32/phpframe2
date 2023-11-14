@@ -19,6 +19,8 @@ interface Event
 
 
     // 文件描述符,中断信号,定时器
+
+
     public function add($fd, $flag, $func, $arg = []);
 
     public function del($fd, $flag);
