@@ -81,7 +81,6 @@ class Server
         } else {
             static::$_eventLoop = new Select();
         }
-
     }
 
     public function statistics()
@@ -443,7 +442,6 @@ class Server
                 }
 
                 $this->runEventCallBack("masterStart", [$this]);
-
 
                 if ("LINUX" == static::$_os) {
 

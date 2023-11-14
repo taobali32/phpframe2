@@ -4,7 +4,6 @@ namespace Jtar\Event;
 
 class Select implements Event
 {
-
     static public $_timerId = 0;
     public $_allEvents = [];
 
@@ -19,6 +18,8 @@ class Select implements Event
     public $_timeOut = 0;
 
 //    public $_timeOut = 100000000; // 100秒
+
+    public $_run = true;
 
     public function add($fd, $flag, $func, $arg = [])
     {
@@ -38,10 +39,22 @@ class Select implements Event
                 $this->_allEvents[$fdKey][self::EV_WRITE] = [$func, [$fd, $arg]];
 
                 return true;
-                break;
 
             case self::EV_SIGNAL:
+                $param = [$func, $arg];
 
+                /**
+                 * 在pcntl_signal($fd,[$this,"signalHandler"],false)中，false是用来设置信号是否可重入的参数。
+                 *
+                 * 当设置为false时，表示信号处理函数signalHandler不可重入。也就是说，如果在处理信号期间再次收到相同的信号，那么第二个信号将被忽略，直到第一个信号处理完毕。
+                 *
+                 * 如果将该参数设置为true，则表示信号处理函数可重入。这意味着如果在处理信号期间再次收到相同的信号，那么第二个信号不会被忽略，而是会立即触发信号处理函数。
+                 *
+                 * 通常情况下，将该参数设置为false是比较常见的做法，以避免信号处理函数的重入导致意外的行为或竞争条件。但在某些特定的应用场景下，可能需要将其设置为true来处理特定的需求。
+                 */
+                $this->_signalEvents[(int)$fd] = $param;
+
+                pcntl_signal($fd, [$this, "signalHandler"], false);
                 return true;
 
             case self::EV_TIMER:
@@ -65,6 +78,15 @@ class Select implements Event
                 }
 
                 return $timerId;
+        }
+    }
+
+    public function signalHandler($signo)
+    {
+        $callBack = $this->_signalEvents[$signo];
+
+        if (is_callable($callBack[0])) {
+            call_user_func_array($callBack[0], [$signo]);
         }
     }
 
@@ -96,6 +118,11 @@ class Select implements Event
 
             case self::EV_SIGNAL:
 
+                if (isset($this->_signalEvents[$fd])) {
+                    unset($this->_signalEvents[$fd]);
+                    pcntl_signal($fd, SIG_IGN);
+                }
+
                 return true;
 
 
@@ -106,6 +133,11 @@ class Select implements Event
                 }
                 break;
         }
+    }
+
+    public function getIsRunning()
+    {
+        return $this->_run;
     }
 
     // select执行的客户端
@@ -182,7 +214,10 @@ class Select implements Event
     public function loop()
     {
         // 内部实现是while
-        while (1) {
+        while ($this->_run) {
+
+            pcntl_signal_dispatch();
+
             $readFds = $this->_readFds;
 
             $writeFds = $this->_writeFds;
@@ -230,11 +265,31 @@ class Select implements Event
         }
     }
 
+
+    public function exitLoop()
+    {
+        $this->_run = false;
+        $this->_readFds = [];
+        $this->_writeFds = [];
+        $this->_exptFds = [];
+        $this->_allEvents = [];
+        return true;
+    }
+
     public function clearTimer()
     {
+        $this->_timers = [];
     }
 
     public function clearSignalEvents()
     {
+        foreach ($this->_signalEvents as $fd => $arg) {
+            //  $fd 信号编号, SI_IGN 忽略
+            //  指定当信号到达时系统调用重启是否可用。（译注：经查资料，此参数意为系统调用被信号打断时，系统调用是否从 开始处重新开始，
+
+            // 清理的时候忽略掉,在Server stop的时候调用了
+            pcntl_signal($fd, SIG_IGN, false);
+        }
+        $this->_signalEvents = [];
     }
 }
