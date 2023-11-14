@@ -58,6 +58,7 @@ class Server
 
         $this->_local_socket = "tcp:" . $ip . ":" . $port;
 
+//        static::$_eventLoop = new Select();
 
         if (DIRECTORY_SEPARATOR == "/") {
             static::$_eventLoop = new Epoll();
@@ -188,12 +189,11 @@ class Server
 
 //        static::$_eventLoop->add(2, Event::EV_TIMER, [$this, 'checkHeartTime']);
         $timerId = static::$_eventLoop->add(1, Event::EV_TIMER, function ($timerId, $arg) {
-//            var_dump($arg);
+            var_dump($arg);
 
-            var_dump($timerId);
-
-            static::$_eventLoop->del($timerId, Event::EV_TIMER);
+//            static::$_eventLoop->del($timerId, Event::EV_TIMER);
         }, ['name' => 'xxx']);
+
 
 //        $this->Accept();
 

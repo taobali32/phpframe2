@@ -5,6 +5,7 @@ namespace Jtar\Event;
 class Select implements Event
 {
 
+    static public $_timerId = 0;
     public $_allEvents = [];
 
     public $_signalEvents = [];
@@ -15,11 +16,9 @@ class Select implements Event
     public $_writeFds = [];
     public $_exptFds = [];
 
-    public $_timeout = 0;
+    public $_timeOut = 0;
 
-    public function __construct()
-    {
-    }
+//    public $_timeOut = 100000000; // 100秒
 
     public function add($fd, $flag, $func, $arg = [])
     {
@@ -44,6 +43,28 @@ class Select implements Event
             case self::EV_SIGNAL:
 
                 return true;
+
+            case self::EV_TIMER:
+            case self::EV_TIMER_ONCE:
+
+                ++static::$_timerId;
+
+                $timerId = static::$_timerId;
+
+                $runTime = microtime(true) + $fd;
+
+                $param = [$func, $runTime, $flag, $timerId, $fd, $arg];
+
+                $this->_timers[$timerId] = $param;
+
+                // $fd 微秒 转换为秒
+                $selectTime = $fd * 1000000;
+
+                if ($this->_timeOut >= $selectTime) {
+                    $this->_timeOut = $selectTime;
+                }
+
+                return $timerId;
         }
     }
 
@@ -76,9 +97,18 @@ class Select implements Event
             case self::EV_SIGNAL:
 
                 return true;
+
+
+            case self::EV_TIMER_ONCE:
+            case self::EV_TIMER:
+                if (isset($this->_timers[$fd])) {
+                    unset($this->_timers[$fd]);
+                }
+                break;
         }
     }
 
+    // select执行的客户端
     public function loop1()
     {
         // 内部实现是while
@@ -123,6 +153,32 @@ class Select implements Event
         return true;
     }
 
+
+    public function timeCallBack()
+    {
+        foreach ($this->_timers as $k => $timer) {
+
+            $func = $timer[0];
+            $runTime = $timer[1];
+            $flag = $timer[2];
+            $timerId = $timer[3];
+            $fd = $timer[4];
+            $arg = $timer[5];
+
+            if ($runTime - microtime(true) <= 0) {
+
+                if ($flag == Event::EV_TIMER_ONCE) {
+                    unset($this->_timers[$timerId]);
+                } else {
+                    $runTime = microtime(true) + $fd;//取得下一个时间点
+                    $this->_timers[$k][1] = $runTime;
+                }
+                call_user_func_array($func, [$timerId, $arg]);
+            }
+        }
+    }
+
+    // 服务端执行
     public function loop()
     {
         // 内部实现是while
@@ -135,11 +191,18 @@ class Select implements Event
             // tv_sec设置为0 则很快就返回了, 不需要等待, 导致该函数一直执行占用cpu..
             // 给null的话有客户端连接才执行
 
-            $ret = stream_select($readFds, $writeFds, $exceptFds, 0, $this->_timeout);
-
-            if ($ret === FALSE) {
-                break;
+            $ret = stream_select($readFds, $writeFds, $exceptFds, 0, $this->_timeOut);
+            if (!empty($this->_timers)) {
+                $this->timeCallBack();
             }
+
+            if (!$ret) {
+                continue;
+            }
+
+//            if ($ret === FALSE) {
+//                break;
+//            }
 
             if ($readFds) {
                 foreach ($readFds as $fd) {
