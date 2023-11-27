@@ -20,7 +20,11 @@ $server->setting(
     [
         'workerNum' => 2,
         "daemon" => false,
-        'taskNum' => 1
+        'taskNum' => 2,
+        "task"  =>  [
+            "unix_socket_server_file" => "/home/ubuntu/study/php/wlw/sock/te_unix_socket_server",
+            "unix_socket_client_file" => "/home/ubuntu/study/php/wlw/sock/te_unix_socket_client",
+        ]
     ]
 );
 
@@ -43,6 +47,7 @@ $server->on("masterShutdown", function (\Jtar\Server $server) {
 $server->on("workerStart", function (\Jtar\Server $server) {
     fprintf(STDOUT, "worker <pid:%d> start\r\n", posix_getpid());
 
+
 });
 
 $server->on("workerStop", function (\Jtar\Server $server) {
@@ -53,6 +58,16 @@ $server->on("receive", function (\Jtar\Server $server, $msg, \Jtar\TcpConnection
 //    fprintf(STDOUT, "接收到<%d>客户端的数据:%s\r\n", (int)$connection->_sockfd, $msg);
 
 //    var_dump($msg);
+
+    $server->task(function ()use($server){
+
+        sleep(1);
+
+        $server->echoLog("异步任务我执行完，时间到了\r\n");
+        echo time()."\r\n";
+
+    });//耗时任务可以投递到任务进程来做
+
     $connection->send($msg);
 });
 

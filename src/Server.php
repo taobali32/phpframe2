@@ -8,7 +8,7 @@ use Jtar\Event\Event;
 use Jtar\Event\Select;
 use Jtar\Protocol\Stream;
 use Jtar\Protocol\Text;
-
+use Opis\Closure\SerializableClosure;
 class Server
 {
     const STATUS_SHUTDOWN = 3;
@@ -16,7 +16,7 @@ class Server
 
     const STATUS_STARTING = 1;
     /**
-     * @var mixed|string7
+     * @var mixed|string
      */
     public static $_startFile;
     public static string $_pidFile;
@@ -57,6 +57,10 @@ class Server
 
     public $_setting = 0;
     public array $_pidMap = [];
+    /**
+     * @var null
+     */
+    public $_unix_socket = "";
 
     public function __construct($_local_socket = "tcp://0.0.0.0:12345")
     {
@@ -457,7 +461,7 @@ class Server
                     $this->saveMasterPid();
                     $this->installSignalHandler();
                     $this->forkWorker();
-//                    $this->forkTaskWorker();
+                    $this->forkTaskWorker();
 
                     static::$_status = self::STATUS_RUNNING;
 
@@ -522,13 +526,164 @@ class Server
         file_put_contents(static::$_pidFile, $pid);
     }
 
+
+
+    public function tasksigHandler($sigNum)
+    {
+        $stream = socket_export_stream($this->_unix_socket);
+
+        static::$_eventLoop->del($stream,Event::EV_READ);
+
+        set_error_handler(function (){});
+
+        fclose($stream);
+
+        restore_error_handler();
+
+        $this->_unix_socket = null;
+
+        static::$_eventLoop->clearSignalEvents();
+        static::$_eventLoop->clearTimer();
+
+        if (static::$_eventLoop->exitLoop()){
+            fprintf(STDOUT, "<pid:%d> task exit event loop success\r\n", posix_getpid());
+        }
+    }
+
+//
+    public function task($taskFunc)
+    {
+        $unix_client_file = $this->_setting['task']['unix_socket_client_file'];
+
+        $index = mt_rand(1,2);
+        $unix_server_file = $this->_setting['task']['unix_socket_server_file'] . $index;
+
+        if (file_exists($unix_client_file)){
+            unlink($unix_client_file);
+        }
+
+        $factorial = function ($n) use ($taskFunc) {
+            return $taskFunc($n);
+        };
+
+//        $wrapper = new SerializableClosure($factorial);
+//        $serialized = serialize($wrapper);
+//
+//        $sockfd = socket_create(AF_UNIX, SOCK_DGRAM, 0);
+//        socket_bind($sockfd, $unix_client_file);
+//
+//        $len = strlen($serialized);
+//        //len|data
+//        $bin = pack("N",$len+4).$serialized;
+
+        //
+//         \Laravel\SerializableClosure\SerializableClosure::setSecretKey('secret');
+
+        $serialized = serialize(new \Laravel\SerializableClosure\SerializableClosure($factorial));
+
+//        $serialized = serialize($wrapper);
+//
+        $sockfd = socket_create(AF_UNIX, SOCK_DGRAM, 0);
+        socket_bind($sockfd, $unix_client_file);
+//
+        $len = strlen($serialized);
+//        //len|data
+        $bin = pack("N",$len+4).$serialized;
+
+        socket_sendto($sockfd, $bin, $len + 4, 0,$unix_server_file);
+
+        socket_close($sockfd);
+    }
+
+
+    public function tasker($i)
+    {
+        srand();
+        mt_rand();
+
+        cli_set_process_title("JT/tasker");
+
+        $unix_socket_file = $this->_setting['task']['unix_socket_server_file'].$i;
+
+        if (file_exists($unix_socket_file)){
+            unlink($unix_socket_file);
+        }
+
+        //创建好的socket文件绑定一个文件
+        $this->_unix_socket = socket_create(AF_UNIX,SOCK_DGRAM,0);
+        socket_bind($this->_unix_socket,$unix_socket_file);//绑定一个地址
+
+//        $this->_unix_socket = stream_socket_server("udg:///" . $unix_socket_file, $errno, $errstr,STREAM_SERVER_BIND);
+
+        $stream = socket_export_stream($this->_unix_socket);
+        socket_set_blocking($stream,0);
+
+        if (DIRECTORY_SEPARATOR == "/"){
+            static::$_eventLoop = new Epoll();
+        }else{
+            static::$_eventLoop = new Select();
+        }
+
+        pcntl_signal(SIGINT, SIG_IGN,false);
+        pcntl_signal(SIGTERM, SIG_IGN,false);
+        pcntl_signal(SIGQUIT, SIG_IGN,false);
+
+        static::$_eventLoop->add(SIGINT,Event::EV_SIGNAL,[$this,"tasksigHandler"]);
+        static::$_eventLoop->add(SIGTERM,Event::EV_SIGNAL,[$this,"tasksigHandler"]);
+        static::$_eventLoop->add(SIGQUIT,Event::EV_SIGNAL,[$this,"tasksigHandler"]);
+
+//        static::$_eventLoop->add($this->_unix_socket,Event::EVENT_READ,[$this,"acceptUdpClient"]);
+        static::$_eventLoop->add($stream,Event::EV_READ,[$this,"acceptUdpClient"]);
+
+//        $this->runEventCallBack("workerStart",[$this]);
+        $this->eventLoop();
+//        $this->runEventCallBack("workerStop",[$this]);
+
+        exit(0);
+    }
+
+    public function acceptUdpClient()
+    {
+        set_error_handler(function (){});
+
+        $len = socket_recvfrom($this->_unix_socket,$buf,65535,0,$unixClientFile);
+        restore_error_handler();
+        if ($buf&&$unixClientFile){
+
+            $udpConnection = new UdpConnection($this->_unix_socket,$len,$buf,$unixClientFile);
+//            $this->runEventCallBack("task",[$udpConnection,$buf]);
+//            $wrapper = unserialize($buf);
+
+//            $closure = $wrapper->getClosure();
+//            $closure($this);
+        }
+        return false;
+    }
+
+
+
+    public function forkTaskWorker()
+    {
+        $workerNum = $this->_setting['taskNum'] ?? 1;
+
+        for ($i = 0; $i < $workerNum; $i++){
+            $pid = pcntl_fork();
+
+            if ($pid == 0){
+                $this->tasker($i+1);
+            }else{
+                $this->_pidMap[$pid] = $pid;
+            }
+        }
+    }
+
+
     public function displayStartInfo()
     {
         $info = "";
 //        $info = "\r\n\e[31;40m" . file_get_contents("logo.txt") . " \e[0m";
         $info .= "\e[33;40mTe workerNum:" . $this->_setting['workerNum'] . " \e[0m \r\n";
         $info .= "\e[33;40m Te taskNum:" . $this->_setting['taskNum'] . " \e[0m \r\n";
-
         $info .= "\e[33;40m Te run mode:" . ($this->checkSetting("daemon") ? "deamon" : "debug") . " \e[0m \r\n";
         $info .= "\e[33;40m Te working with :" . $this->_usingProtocol . " protocol \e[0m \r\n";
         $info .= "\e[33;40m Te server listen on :" . $this->_local_socket . " \e[0m \r\n";

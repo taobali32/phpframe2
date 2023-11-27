@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Opis\\Closure\\' => array($vendorDir . '/opis/closure/src'),
+    'Laravel\\SerializableClosure\\' => array($vendorDir . '/laravel/serializable-closure/src'),
     'Jtar\\' => array($baseDir . '/src'),
     'App\\' => array($baseDir . '/app'),
 );

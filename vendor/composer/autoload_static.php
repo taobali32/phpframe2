@@ -6,14 +6,14 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitc574abc8a7cd817c663b3ce4ad2eb7cd
 {
-    public static $files = array (
-        '538ca81a9a966a6716601ecf48f4eaef' => __DIR__ . '/..' . '/opis/closure/functions.php',
-    );
-
     public static $prefixLengthsPsr4 = array (
         'O' => 
         array (
             'Opis\\Closure\\' => 13,
+        ),
+        'L' => 
+        array (
+            'Laravel\\SerializableClosure\\' => 28,
         ),
         'J' => 
         array (
@@ -30,6 +30,10 @@ class ComposerStaticInitc574abc8a7cd817c663b3ce4ad2eb7cd
         array (
             0 => __DIR__ . '/..' . '/opis/closure/src',
         ),
+        'Laravel\\SerializableClosure\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laravel/serializable-closure/src',
+        ),
         'Jtar\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',
@@ -42,16 +46,43 @@ class ComposerStaticInitc574abc8a7cd817c663b3ce4ad2eb7cd
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
-        'Opis\\Closure\\Analyzer' => __DIR__ . '/..' . '/opis/closure/src/Analyzer.php',
-        'Opis\\Closure\\ClosureContext' => __DIR__ . '/..' . '/opis/closure/src/ClosureContext.php',
-        'Opis\\Closure\\ClosureScope' => __DIR__ . '/..' . '/opis/closure/src/ClosureScope.php',
+        'Jtar\\Client' => __DIR__ . '/../..' . '/src/Client.php',
+        'Jtar\\Event\\Epoll' => __DIR__ . '/../..' . '/src/Event/Epoll.php',
+        'Jtar\\Event\\Event' => __DIR__ . '/../..' . '/src/Event/Event.php',
+        'Jtar\\Event\\Select' => __DIR__ . '/../..' . '/src/Event/Select.php',
+        'Jtar\\Protocol\\Protocol' => __DIR__ . '/../..' . '/src/Protocol/Protocol.php',
+        'Jtar\\Protocol\\Stream' => __DIR__ . '/../..' . '/src/Protocol/Stream.php',
+        'Jtar\\Protocol\\Text' => __DIR__ . '/../..' . '/src/Protocol/Text.php',
+        'Jtar\\Server' => __DIR__ . '/../..' . '/src/Server.php',
+        'Jtar\\TcpConnection' => __DIR__ . '/../..' . '/src/TcpConnection.php',
+        'Laravel\\SerializableClosure\\Contracts\\Serializable' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Contracts/Serializable.php',
+        'Laravel\\SerializableClosure\\Contracts\\Signer' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Contracts/Signer.php',
+        'Laravel\\SerializableClosure\\Exceptions\\InvalidSignatureException' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Exceptions/InvalidSignatureException.php',
+        'Laravel\\SerializableClosure\\Exceptions\\MissingSecretKeyException' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Exceptions/MissingSecretKeyException.php',
+        'Laravel\\SerializableClosure\\Exceptions\\PhpVersionNotSupportedException' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Exceptions/PhpVersionNotSupportedException.php',
+        'Laravel\\SerializableClosure\\SerializableClosure' => __DIR__ . '/..' . '/laravel/serializable-closure/src/SerializableClosure.php',
+        'Laravel\\SerializableClosure\\Serializers\\Native' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Serializers/Native.php',
+        'Laravel\\SerializableClosure\\Serializers\\Signed' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Serializers/Signed.php',
+        'Laravel\\SerializableClosure\\Signers\\Hmac' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Signers/Hmac.php',
+        'Laravel\\SerializableClosure\\Support\\ClosureScope' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Support/ClosureScope.php',
+        'Laravel\\SerializableClosure\\Support\\ClosureStream' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Support/ClosureStream.php',
+        'Laravel\\SerializableClosure\\Support\\ReflectionClosure' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Support/ReflectionClosure.php',
+        'Laravel\\SerializableClosure\\Support\\SelfReference' => __DIR__ . '/..' . '/laravel/serializable-closure/src/Support/SelfReference.php',
+        'Laravel\\SerializableClosure\\UnsignedSerializableClosure' => __DIR__ . '/..' . '/laravel/serializable-closure/src/UnsignedSerializableClosure.php',
+        'Opis\\Closure\\BaseClosure' => __DIR__ . '/..' . '/opis/closure/src/BaseClosure.php',
         'Opis\\Closure\\ClosureStream' => __DIR__ . '/..' . '/opis/closure/src/ClosureStream.php',
+        'Opis\\Closure\\CodeWrapper' => __DIR__ . '/..' . '/opis/closure/src/CodeWrapper.php',
+        'Opis\\Closure\\HeaderFile' => __DIR__ . '/..' . '/opis/closure/src/HeaderFile.php',
         'Opis\\Closure\\ISecurityProvider' => __DIR__ . '/..' . '/opis/closure/src/ISecurityProvider.php',
+        'Opis\\Closure\\Library' => __DIR__ . '/..' . '/opis/closure/src/Library.php',
         'Opis\\Closure\\ReflectionClosure' => __DIR__ . '/..' . '/opis/closure/src/ReflectionClosure.php',
+        'Opis\\Closure\\ReflectionFunctionInfo' => __DIR__ . '/..' . '/opis/closure/src/ReflectionFunctionInfo.php',
         'Opis\\Closure\\SecurityException' => __DIR__ . '/..' . '/opis/closure/src/SecurityException.php',
         'Opis\\Closure\\SecurityProvider' => __DIR__ . '/..' . '/opis/closure/src/SecurityProvider.php',
         'Opis\\Closure\\SelfReference' => __DIR__ . '/..' . '/opis/closure/src/SelfReference.php',
         'Opis\\Closure\\SerializableClosure' => __DIR__ . '/..' . '/opis/closure/src/SerializableClosure.php',
+        'Opis\\Closure\\SerializableClosureHandler' => __DIR__ . '/..' . '/opis/closure/src/SerializableClosureHandler.php',
+        'Opis\\Closure\\TokenizedFileInfo' => __DIR__ . '/..' . '/opis/closure/src/TokenizedFileInfo.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
