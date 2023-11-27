@@ -16,7 +16,7 @@ class Server
 
     const STATUS_STARTING = 1;
     /**
-     * @var mixed|string
+     * @var mixed|string7
      */
     public static $_startFile;
     public static string $_pidFile;
@@ -86,12 +86,13 @@ class Server
     public function statistics()
     {
         $nowTime = time();
-        $this->_startTime = $nowTime;
 
         $diffTime = $nowTime - $this->_startTime;
 
+        $this->_startTime = $nowTime;
+
         if ($diffTime >= 1) {
-            fprintf(STDOUT, "clientNum:%d, recvNum:%d, msgNum:%d\r\n", static::$_clientNum, static::$_recvNum, static::$_msgNum);
+            fprintf(STDOUT, "pid:%d, clientNum:%d, recvNum:%d, msgNum:%d\r\n",posix_getpid(), static::$_clientNum, static::$_recvNum, static::$_msgNum);
 
             static::$_recvNum = 0;
             static::$_msgNum = 0;
@@ -242,7 +243,10 @@ class Server
 
         static::$_eventLoop->add($this->_mainSocket, Event::EV_READ, [$this, "accept"]);
 //        static::$_eventLoop->add(2,Event::EVENT_TIMER,[$this,"checkHeartTime"]);
+
+//
 //        static::$_eventLoop->add(1,Event::EVENT_TIMER,[$this,"statistics"]);
+        static::$_eventLoop->add(1,Event::EV_TIMER,[$this,"statistics"]);
 
 //        static::$_eventLoop->add(2,Event::EVENT_TIMER,function ($timerId,$arg){
 //            echo posix_getpid() . "定时\r\n";
