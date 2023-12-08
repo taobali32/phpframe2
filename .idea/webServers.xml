@@ -2,10 +2,10 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="c823dfa9-454e-49cd-8ed1-e7661d3d1316" name="5">
-        <fileTransfer rootFolder="/home/ubuntu/study/php/wlw" accessType="SFTP" host="182.43.11.219" port="8225" sshConfigId="588e1425-671a-4730-8b2a-e3e16552b1b2" sshConfig="ubuntu@182.43.11.219:8225 password">
+      <webServer id="10ea77a9-8bac-4663-b105-39d1257912bb" name="sa">
+        <fileTransfer rootFolder="/home/ubuntu/study/php/wlw" accessType="SFTP" host="182.43.11.219" port="8225" sshConfigId="788bfa26-49cb-4e26-a127-e1d24b32c523" sshConfig="ubuntu@182.43.11.219:8225 password">
           <advancedOptions>
-            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" isUseSudo="true" />
           </advancedOptions>
         </fileTransfer>
       </webServer>

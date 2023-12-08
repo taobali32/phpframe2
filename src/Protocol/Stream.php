@@ -35,6 +35,7 @@ class Stream implements Protocol
 
     public function decode($data = '')
     {
+        //123456
         $cmd = substr($data, 4, 2);
 
         $msg = substr($data, 6);

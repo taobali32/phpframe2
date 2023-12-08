@@ -55,6 +55,7 @@ class UdpConnection
         $this->_recvBuffer.=$buf;
         $this->_recvLen+=$len;
 
+        // 打印
         $this->handleMessage();
     }
 
@@ -86,38 +87,38 @@ class UdpConnection
     }
 
 
-    public function recv4socket()
-    {
-        if ($this->_recvLen < $this->_recvBufferSize){
-            $data = fread($this->_connfd, $this->_readBufferSize);
-
-            //  对端关闭了
-            if ($data === '' || $data == false){
-
-                /**
-                 * @var Server $server
-                 */
-                $server = $this->_server;
-
-                // 对端关闭
-                if (feof($this->_connfd) || !is_resource($this->_connfd)){
-                    $this->Close();
-                }
-            }else{
-                // 接收到的数据放在缓冲区
-                $this->_recvBuffer .= $data;
-                $this->_recvLen += strlen($data);
-                $this->_server->onRecv();
-            }
-
-        }else{
-            $this->_recvBufferFull++;
-            $this->_server->runEventCallBack("receiveBufferFull", [$this]);
-        }
-
-        if ($this->_recvLen > 0){
-            $this->handleMessage();
-        }
-    }
+//    public function recv4socket()
+//    {
+//        if ($this->_recvLen < $this->_recvBufferSize){
+//            $data = fread($this->_connfd, $this->_readBufferSize);
+//
+//            //  对端关闭了
+//            if ($data === '' || $data == false){
+//
+//                /**
+//                 * @var Server $server
+//                 */
+//                $server = $this->_server;
+//
+//                // 对端关闭
+//                if (feof($this->_connfd) || !is_resource($this->_connfd)){
+//                    $this->Close();
+//                }
+//            }else{
+//                // 接收到的数据放在缓冲区
+//                $this->_recvBuffer .= $data;
+//                $this->_recvLen += strlen($data);
+//                $this->_server->onRecv();
+//            }
+//
+//        }else{
+//            $this->_recvBufferFull++;
+//            $this->_server->runEventCallBack("receiveBufferFull", [$this]);
+//        }
+//
+//        if ($this->_recvLen > 0){
+//            $this->handleMessage();
+//        }
+//    }
 
 }

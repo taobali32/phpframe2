@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="5" createEmptyFolders="true" confirmBeforeUploading="false" confirmBeforeDeletion="false">
-    <option name="confirmBeforeDeletion" value="false" />
+  <component name="PublishConfigData" autoUpload="Always" serverName="sa" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
-      <paths name="5">
+      <paths name="sa">
         <serverdata>
           <mappings>
             <mapping deploy="/" local="$PROJECT_DIR$" web="/" />

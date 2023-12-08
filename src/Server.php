@@ -566,23 +566,8 @@ class Server
             return $taskFunc($n);
         };
 
-//        $wrapper = new SerializableClosure($factorial);
-//        $serialized = serialize($wrapper);
-//
-//        $sockfd = socket_create(AF_UNIX, SOCK_DGRAM, 0);
-//        socket_bind($sockfd, $unix_client_file);
-//
-//        $len = strlen($serialized);
-//        //len|data
-//        $bin = pack("N",$len+4).$serialized;
-
-        //
-//         \Laravel\SerializableClosure\SerializableClosure::setSecretKey('secret');
-
         $serialized = serialize(new \Laravel\SerializableClosure\SerializableClosure($factorial));
 
-//        $serialized = serialize($wrapper);
-//
         $sockfd = socket_create(AF_UNIX, SOCK_DGRAM, 0);
         socket_bind($sockfd, $unix_client_file);
 //
