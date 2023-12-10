@@ -12,15 +12,17 @@ require_once "vendor/autoload.php";
 // ws open/message/close
 // mqtt connect/subscribe/publish/close/unsubscribe
 //$server = new \Jtar\Server("tcp://0.0.0.0:9501");
-$server = new \Jtar\Server("tcp://0.0.0.0:9501");
+//$server = new \Jtar\Server("tcp://0.0.0.0:9501");
+$server = new \Jtar\Server("http://0.0.0.0:9501");
+
 
 //$server = new \Jtar\Server("tcp://0.0.0.0:9501");
 
 $server->setting(
     [
-        'workerNum' => 2,
+        'workerNum' => 1,
         "daemon" => false,
-        'taskNum' => 2,
+        'taskNum' => 1,
         "task"  =>  [
             "unix_socket_server_file" => "/home/ubuntu/study/php/wlw/sock/te_unix_socket_server",
             "unix_socket_client_file" => "/home/ubuntu/study/php/wlw/sock/te_unix_socket_client",
@@ -28,8 +30,34 @@ $server->setting(
     ]
 );
 
+$server->on("request", function (\Jtar\Server $server, \Jtar\Request $request,\Jtar\Response $response) {
+//    fprintf(STDOUT, "有客户端连接了\n");
+
+    //  响应内容
+//    $response->write("hello,world");
+
+    //  响应json
+//    $response->header('Content-Type','application/json');
+//    $response->write(json_encode(['data' => 'hello world!']));
+
+
+    //  响应图片
+//    $file = "www/3411700127133_.pic.jpg";
+//    $response->sendFile($file);
+
+    if (preg_match("/.html|.jpg|.png|.gif|.css|.js|.ico|.woff|.woff2|.ttf|.eot|.svg|.mp4|.mp3/",$request->_request['uri'])){
+        $file = "www/".$request->_request['uri'];
+        $response->sendFile($file);
+
+        return true;
+    }
+
+});
+
 $server->on("connect", function (\Jtar\Server $server, \Jtar\TcpConnection $connection) {
-    fprintf(STDOUT, "有客户端连接了\n");
+//    fprintf(STDOUT, "有客户端连接了\n");
+
+//    var_dump($_POST);
 });
 
 $server->on("masterStart", function (\Jtar\Server $server) {
@@ -63,8 +91,8 @@ $server->on("receive", function (\Jtar\Server $server, $msg, \Jtar\TcpConnection
 
         sleep(1);
 
-        $server->echoLog("异步任务我执行完，时间到了\r\n");
-        echo time()."\r\n";
+//        $server->echoLog("异步任务我执行完，时间到了\r\n");
+//        echo time()."\r\n";
 
     });//耗时任务可以投递到任务进程来做
 

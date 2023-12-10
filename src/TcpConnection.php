@@ -15,10 +15,10 @@ class TcpConnection
      */
     public $_server;
 
-    public $_readBufferSize = 1024;
+    public $_readBufferSize = 1024 * 10;
 
     // 当前连接接收缓冲区大小
-    public $_recvBufferSize = 1024 * 100;
+    public $_recvBufferSize = 1024 * 100 * 10;
     // 当前连接接收到的字节数
     public $_recvLen = 0;
     // 当前连接接收到的字节数超过_recvBufferSize时,记录1
@@ -29,7 +29,7 @@ class TcpConnection
 
     public $_sendLen = 0;
     public $_sendBuffer = '';
-    public $_sendBufferSize = 1024 * 1000;
+    public $_sendBufferSize = 1024 * 1000 * 10;
 
     public $_sendBufferFull = 0;
 
@@ -123,6 +123,52 @@ class TcpConnection
         }
     }
 
+
+    public function createRequest()
+    {
+        $request = new Request();
+        $request->_get = $_GET;
+        $request->_post = $_POST;
+        $request->_request = $_REQUEST;
+        $request->_files = $_FILES;
+        return $request;
+    }
+
+    public function runEventCallBack($msg)
+    {
+        /** @var Server $server */
+        $server = $this->_server;
+
+        switch ($this->_server->_usingProtocol) {
+            case "tcp":
+            case "text":
+            case "stream":
+                $server->runEventCallBack("receive",[$msg,$this]);
+                break;
+
+            case 'http':
+                $request = $this->createRequest();
+                $response = new Response($this);
+
+                if ($request->_request['method']=="OPTIONS"){
+
+                    $response->sendMethods();
+
+                }else{
+                    $server->runEventCallBack("request",[$request,$response]);
+                }
+
+                break;
+
+            case 'ws':
+                break;
+            case 'mqtt':
+                break;
+            case 'redis':
+                break;
+        }
+    }
+
     public function handleMessage()
     {
         /**
@@ -148,11 +194,15 @@ class TcpConnection
 
                 $message = $this->_server->_protocol->decode($oneMsg);
 
-                $this->_server->runEventCallBack('receive', [$message, $this]);
+//                $this->_server->runEventCallBack('receive', [$message, $this]);
+
+                $this->runEventCallBack($message);
             }
 
         } else {
-            $server->runEventCallBack("receive", [$this->_recvBuffer, $this]);
+//            $server->runEventCallBack("receive", [$this->_recvBuffer, $this]);
+            $this->runEventCallBack($this->_recvBuffer);
+
 
             $this->_recvBuffer = "";
             $this->_recvLen = 0;

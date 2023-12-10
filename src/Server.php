@@ -6,6 +6,7 @@ use Exception;
 use Jtar\Event\Epoll;
 use Jtar\Event\Event;
 use Jtar\Event\Select;
+use Jtar\Protocol\Http;
 use Jtar\Protocol\Stream;
 use Jtar\Protocol\Text;
 use Opis\Closure\SerializableClosure;
@@ -49,7 +50,7 @@ class Server
         'stream' => Stream::class,
         "text" => Text::class,
         "ws" => "",
-        "http" => "",
+        "http" => Http::class,
         "mqtt" => ""
     ];
 
@@ -250,7 +251,7 @@ class Server
 
 //
 //        static::$_eventLoop->add(1,Event::EVENT_TIMER,[$this,"statistics"]);
-        static::$_eventLoop->add(1,Event::EV_TIMER,[$this,"statistics"]);
+//        static::$_eventLoop->add(1,Event::EV_TIMER,[$this,"statistics"]);
 
 //        static::$_eventLoop->add(2,Event::EVENT_TIMER,function ($timerId,$arg){
 //            echo posix_getpid() . "定时\r\n";
