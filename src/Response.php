@@ -70,17 +70,17 @@ class Response
         if (!isset($this->_headers['Content-Type'])){
             $text.=sprintf("Content-Type: %s\r\n","text/html;charset=utf-8");
         }
-//        if (isset($_REQUEST['Accept_Encoding'])){
-//
-//            $encoding = $_REQUEST['Accept_Encoding'];
-//            if (preg_match("/gzip/",$encoding)){
-//
-//                //启用内容压缩
-//                $data = gzencode($data);
-//                $len = strlen($data);
-//                $text.=sprintf("Content-Encoding: %s\r\n","gzip");
-//            }
-//        }
+        if (isset($_REQUEST['Accept_Encoding'])){
+
+            $encoding = $_REQUEST['Accept_Encoding'];
+            if (preg_match("/gzip/",$encoding)){
+
+                //启用内容压缩
+                $data = gzencode($data);
+                $len = strlen($data);
+                $text.=sprintf("Content-Encoding: %s\r\n","gzip");
+            }
+        }
         $text.=sprintf("Content-Length: %d\r\n",$len);
 
         $text.="\r\n";

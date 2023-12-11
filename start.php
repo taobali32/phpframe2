@@ -4,7 +4,6 @@ ini_set('memory_limit', "2048M");
 
 require_once "vendor/autoload.php";
 
-
 // tcp connect/receive/close
 // udp packet / close
 // stream/text
@@ -31,6 +30,8 @@ $server->setting(
 );
 
 $server->on("request", function (\Jtar\Server $server, \Jtar\Request $request,\Jtar\Response $response) {
+    global $routes;
+    global $dispatcher;
 //    fprintf(STDOUT, "有客户端连接了\n");
 
     //  响应内容
@@ -51,6 +52,14 @@ $server->on("request", function (\Jtar\Server $server, \Jtar\Request $request,\J
 
         return true;
     }
+
+    /**
+     * @var $dispatcher \App\Controllers\ControllerDispatcher
+     */
+    $dispatcher->callAction($routes,$request,$response);
+//    $response->header('Content-Type','application/json');
+//    $response->write($result);
+
 
 });
 
@@ -73,9 +82,14 @@ $server->on("masterShutdown", function (\Jtar\Server $server) {
 });
 
 $server->on("workerStart", function (\Jtar\Server $server) {
+
+    global $routes;
+    global $dispatcher;
+    $routes = require_once "app/routers/api.php";
+
+    $dispatcher = new \App\Controllers\ControllerDispatcher();
+
     fprintf(STDOUT, "worker <pid:%d> start\r\n", posix_getpid());
-
-
 });
 
 $server->on("workerStop", function (\Jtar\Server $server) {

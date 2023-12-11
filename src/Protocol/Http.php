@@ -44,10 +44,7 @@ class Http implements Protocol
 
     public function parseHeader($data)
     {
-
 //        var_dump($data);
-
-        //c /c++ 解析起来相当的麻烦
 
 //string(187) "GET / HTTP/1.1
 //User-Agent: PostmanRuntime-ApipostRuntime/1.1.0
@@ -88,7 +85,7 @@ class Http implements Protocol
 
         $_REQUEST['method'] = $method;
         $_REQUEST['schema'] = $schema;
-        //$_GET $_POST 大家学编程不要被条条框框限制，要有自己的主见
+        //$_GET $_POST
 
         unset($temp[0]);
 
